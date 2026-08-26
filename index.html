@@ -1,0 +1,3651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elvish Army</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #080808;
+            color: #fff;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* HEADER */
+        .header {
+            height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            background: #0d0d0d;
+            border-bottom: 1px solid #222;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .logo span {
+            color: #f5b400;
+        }
+
+        .notification {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #181818;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* HERO */
+        .hero {
+            margin: 18px;
+            padding: 25px 20px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #1b1b1b, #0e0e0e);
+            border: 1px solid #292929;
+        }
+
+        .hero small {
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        .hero h1 {
+            margin-top: 8px;
+            font-size: 29px;
+        }
+
+        .hero h1 span {
+            color: #f5b400;
+        }
+
+        .hero p {
+            margin-top: 8px;
+            color: #aaa;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .join-btn {
+            margin-top: 18px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            background: #f5b400;
+            color: #000;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* SECTION */
+        .section {
+            padding: 0 18px;
+            margin-top: 25px;
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .section-title h2 {
+            font-size: 19px;
+        }
+
+        .see-all {
+            color: #f5b400;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* QUICK MENU */
+        .quick-menu {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .quick-item {
+            background: #151515;
+            border: 1px solid #252525;
+            border-radius: 15px;
+            padding: 15px 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .quick-item .icon {
+            font-size: 25px;
+        }
+
+        .quick-item p {
+            margin-top: 7px;
+            font-size: 11px;
+            color: #ccc;
+        }
+
+        /* UPDATE CARD */
+        .update-card {
+            background: #151515;
+            border: 1px solid #252525;
+            border-radius: 17px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .update-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #242424;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 21px;
+        }
+
+        .user-info h3 {
+            font-size: 14px;
+        }
+
+        .user-info span {
+            color: #777;
+            font-size: 11px;
+        }
+
+        .update-text {
+            margin-top: 13px;
+            color: #ddd;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .actions {
+            display: flex;
+            gap: 22px;
+            margin-top: 14px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .action {
+            cursor: pointer;
+        }
+
+        .action:hover {
+            color: #f5b400;
+        }
+
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: #101010;
+            border-top: 1px solid #252525;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 200;
+        }
+
+        .nav-item {
+            text-align: center;
+            color: #777;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .nav-item .nav-icon {
+            font-size: 21px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item.active {
+            color: #f5b400;
+        }
+
+        /* DESKTOP */
+        @media (min-width: 700px) {
+            body {
+                max-width: 600px;
+                margin: auto;
+                background: #080808;
+            }
+
+            .bottom-nav {
+                max-width: 600px;
+                margin: auto;
+            }
+        }
+
+        /* ================= POLL RESULT ================= */
+
+.poll-result {
+    margin-top: 18px;
+}
+
+.poll-result-row {
+    margin-top: 14px;
+}
+
+.poll-result-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #ddd;
+    margin-bottom: 6px;
+}
+
+.poll-percent {
+    color: #f5b400;
+    font-weight: 700;
+}
+
+.poll-bar {
+    width: 100%;
+    height: 10px;
+    background: #292929;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.poll-bar-fill {
+    height: 100%;
+    background: #f5b400;
+    border-radius: 20px;
+    width: 0%;
+    transition: width 0.7s ease;
+}
+
+.poll-total {
+    margin-top: 14px;
+    color: #777;
+    font-size: 12px;
+}
+
+.community-create {
+    background: #151515;
+    border: 1px solid #252525;
+    border-radius: 17px;
+    padding: 16px;
+    margin-bottom: 15px;
+}
+
+.create-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.create-top input {
+    flex: 1;
+    background: #202020;
+    border: 1px solid #303030;
+    border-radius: 12px;
+    padding: 12px;
+    color: #fff;
+    outline: none;
+}
+
+.community-create textarea {
+    width: 100%;
+    min-height: 90px;
+    margin-top: 12px;
+    background: #101010;
+    border: 1px solid #292929;
+    border-radius: 12px;
+    padding: 12px;
+    color: #fff;
+    resize: none;
+    outline: none;
+}
+
+.create-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.media-btn {
+    color: #f5b400;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.post-btn {
+    border: none;
+    background: #f5b400;
+    color: #000;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.media-preview {
+    margin-top: 10px;
+}
+
+.media-preview img,
+.media-preview video {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 14px;
+}
+
+</style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="logo">
+            ELVISH <span>ARMY</span>
+        </div>
+
+        <div class="notification" onclick="showNotification()">
+            🔔
+        </div>
+    </header>
+
+
+    <!-- HERO -->
+    <section class="hero">
+        <small>WELCOME TO THE COMMUNITY 👑</small>
+
+        <h1>
+            Jai <span>Elvish</span> Army 🔥
+        </h1>
+
+        <p>
+            Stay connected with the latest updates, videos,
+            news and fan community.
+        </p>
+
+        <button class="join-btn" onclick="joinArmy()">
+            JOIN ELVISH ARMY
+        </button>
+    </section>
+
+    <!-- ================= POLL SCREEN ================= -->
+
+<section
+    id="pollScreen"
+    class="app-screen"
+    style="display:none;"
+>
+
+    <div class="section">
+
+        <div class="section-title">
+            <h2>🗳️ Fan Poll</h2>
+        </div>
+
+        <div id="pollContainer">
+
+            <div class="update-card">
+                <p class="update-text">
+                    Loading poll...
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+    <!-- QUICK MENU -->
+    <section class="section">
+
+        <div class="section-title">
+            <h2>Explore</h2>
+        </div>
+
+        <div class="quick-menu">
+
+            <div class="quick-item" onclick="openSection('News')">
+                <div class="icon">📰</div>
+                <p>News</p>
+            </div>
+
+            <div class="quick-item" onclick="openSection('Videos')">
+                <div class="icon">🎬</div>
+                <p>Videos</p>
+            </div>
+
+            <div class="quick-item" onclick="openSection('Photos')">
+                <div class="icon">📸</div>
+                <p>Photos</p>
+            </div>
+
+            <div class="quick-item" onclick="openSection('Poll')">
+            <div class="icon">🗳️</div>
+            <p>Poll</p>
+           </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- LATEST UPDATES -->
+    <section class="section">
+
+    <div class="section-title">
+        <h2>Latest Updates</h2>
+        <span class="see-all">See All</span>
+    </div>
+
+    <div id="updatesContainer">
+
+        <!-- Update 1 -->
+        <div class="update-card">
+
+            <div class="update-top">
+
+                <div class="avatar">
+                    👑
+                </div>
+
+                <div class="user-info">
+                    <h3>Elvish Army</h3>
+                    <span>Just now</span>
+                </div>
+
+            </div>
+
+            <p class="update-text">
+                Welcome to the official fan community experience.
+                Stay tuned for latest updates and exciting content. 🔥
+            </p>
+
+            <div class="actions">
+
+                <div class="action" onclick="likePost(this)">
+                    ❤️ Like
+                </div>
+
+                <div class="action">
+                    💬 Comment
+                </div>
+
+                <div class="action">
+                    📤 Share
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Update 2 -->
+        <div class="update-card">
+
+            <div class="update-top">
+
+                <div class="avatar">
+                    🔥
+                </div>
+
+                <div class="user-info">
+                    <h3>Elvish Army</h3>
+                    <span>Today</span>
+                </div>
+
+            </div>
+
+            <p class="update-text">
+                Get ready for new community features,
+                polls, quizzes and fan rankings. 👑
+            </p>
+
+            <div class="actions">
+
+                <div class="action" onclick="likePost(this)">
+                    ❤️ Like
+                </div>
+
+                <div class="action">
+                    💬 Comment
+                </div>
+
+                <div class="action">
+                    📤 Share
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ==========================================
+     COMMUNITY
+========================================== -->
+
+<section class="section" id="communitySection">
+
+    <div class="section-title">
+
+        <h2>Community 👥</h2>
+
+    </div>
+
+
+    <!-- COMMUNITY CREATE POST -->
+
+<div class="community-create">
+
+    <div class="create-top">
+
+        <div class="avatar">
+            👤
+        </div>
+
+        <input
+            type="text"
+            id="communityUsername"
+            placeholder="Your name"
+            maxlength="30"
+        >
+
+    </div>
+
+    <textarea
+        id="communityContent"
+        placeholder="Elvish Army me kuch share karo... 🔥"
+        maxlength="1000"
+    ></textarea>
+
+    <div
+        id="mediaPreview"
+        class="media-preview"
+    ></div>
+
+    <div class="create-actions">
+
+        <label class="media-btn">
+
+            📸 Photo / 🎥 Video
+
+            <input
+                type="file"
+                id="communityMedia"
+                accept="image/*,video/*"
+                onchange="previewCommunityMedia(this)"
+                hidden
+            >
+
+        </label>
+
+        <button
+            class="post-btn"
+            onclick="createCommunityPost()"
+        >
+            Post 🔥
+        </button>
+
+    </div>
+
+</div>
+
+
+<div id="communityContainer"></div>
+
+
+    <!-- COMMUNITY FEED -->
+
+    <div id="communityContainer">
+
+        <div class="update-card">
+
+            <p class="update-text">
+                Community loading... 🔄
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+
+        <div class="nav-item active" onclick="openSection('Home')">
+            <div class="nav-icon">🏠</div>
+            Home
+        </div>
+
+        <div class="nav-item" onclick="openSection('News')">
+            <div class="nav-icon">📰</div>
+            News
+        </div>
+
+        <div class="nav-item" onclick="openSection('Community')">
+            <div class="nav-icon">👥</div>
+            Community
+        </div>
+
+        <div class="nav-item" onclick="openSection('Videos')">
+            <div class="nav-icon">🎬</div>
+            Videos
+        </div>
+
+        <div class="nav-item" onclick="openSection('Profile')">
+            <div class="nav-icon">👤</div>
+            Profile
+        </div>
+
+    </nav>
+
+
+    <script>
+
+const API_URL = "http://127.0.0.1:8000";
+
+
+// ==================================================
+// HOME UPDATES
+// ==================================================
+
+async function loadUpdates() {
+
+    const container =
+        document.getElementById("updatesContainer");
+
+    try {
+
+        const response =
+            await fetch(`${API_URL}/api/updates`);
+
+        if (!response.ok) {
+            throw new Error("Updates API Error");
+        }
+
+        const data =
+            await response.json();
+
+        container.innerHTML = "";
+
+        if (!data.updates || data.updates.length === 0) {
+
+            container.innerHTML = `
+                <div class="update-card">
+                    <p class="update-text">
+                        No updates available yet.
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+        data.updates.forEach(update => {
+
+            const card =
+                document.createElement("div");
+
+            card.className = "update-card";
+
+            card.innerHTML = `
+
+                <div class="update-top">
+
+                    <div class="avatar">👑</div>
+
+                    <div class="user-info">
+
+                        <h3>
+                            ${escapeHTML(update.title)}
+                        </h3>
+
+                        <span>
+                            ${escapeHTML(update.time || "Just now")}
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <p class="update-text">
+                    ${escapeHTML(update.description)}
+                </p>
+
+                <div class="actions">
+
+                    <div
+                        class="action"
+                        onclick="likePost(this)"
+                    >
+                        ❤️ Like
+                    </div>
+
+                    <div class="action">
+                        💬 Comment
+                    </div>
+
+                    <div
+                        class="action"
+                        onclick="sharePost('${escapeHTML(update.title)}')"
+                    >
+                        📤 Share
+                    </div>
+
+                </div>
+            `;
+
+            container.appendChild(card);
+
+        });
+
+    } catch (error) {
+
+        console.error("Updates:", error);
+
+        container.innerHTML = `
+            <div class="update-card">
+                <p class="update-text">
+                    Updates load nahi ho paaye 😕
+                </p>
+            </div>
+        `;
+
+    }
+}
+
+
+// ==================================================
+// NEWS
+// ==================================================
+
+async function loadNews() {
+
+    try {
+
+        const response =
+            await fetch(`${API_URL}/api/news`);
+
+        if (!response.ok) {
+            throw new Error("News API Error");
+        }
+
+        const data =
+            await response.json();
+
+        return data.news || [];
+
+    } catch (error) {
+
+        console.error("News:", error);
+
+        return [];
+
+    }
+}
+
+
+// ==================================================
+// VIDEOS
+// ==================================================
+
+async function loadVideos() {
+
+    try {
+
+        const response =
+            await fetch(`${API_URL}/api/videos`);
+
+        if (!response.ok) {
+            throw new Error("Videos API Error");
+        }
+
+        const data =
+            await response.json();
+
+        return data.videos || [];
+
+    } catch (error) {
+
+        console.error("Videos:", error);
+
+        return [];
+
+    }
+}
+
+
+// ==================================================
+// PHOTOS
+// ==================================================
+
+async function loadPhotos() {
+
+    try {
+
+        const response =
+            await fetch(`${API_URL}/api/photos`);
+
+        if (!response.ok) {
+            throw new Error("Photos API Error");
+        }
+
+        const data =
+            await response.json();
+
+        return data.photos || [];
+
+    } catch (error) {
+
+        console.error("Photos:", error);
+
+        return [];
+
+    }
+}
+
+
+// ==================================================
+// NOTIFICATIONS
+// ==================================================
+
+async function loadNotifications() {
+
+    try {
+
+        const response =
+            await fetch(`${API_URL}/api/notifications`);
+
+        if (!response.ok) {
+            throw new Error("Notification API Error");
+        }
+
+        const data =
+            await response.json();
+
+        return data.notifications || [];
+
+    } catch (error) {
+
+        console.error("Notifications:", error);
+
+        return [];
+
+    }
+}
+
+
+// ==================================================
+// NOTIFICATION BUTTON
+// ==================================================
+
+async function showNotification() {
+
+    const notifications =
+        await loadNotifications();
+
+    if (!notifications.length) {
+
+        alert("No new notifications 🔔");
+
+        return;
+    }
+
+    const latest =
+        notifications[0];
+
+    alert(
+        "🔔 " +
+        latest.title +
+        "\n\n" +
+        latest.message
+    );
+}
+
+
+// ==================================================
+// NEWS SCREEN
+// ==================================================
+
+async function showNews() {
+
+    const news =
+        await loadNews();
+
+    const container =
+        document.getElementById("updatesContainer");
+
+    container.innerHTML = "";
+
+    if (!news.length) {
+
+        container.innerHTML = `
+            <div class="update-card">
+                <p class="update-text">
+                    No news available yet 📰
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+    news.forEach(item => {
+
+        container.innerHTML += `
+
+            <div class="update-card">
+
+                <div class="update-top">
+
+                    <div class="avatar">
+                        📰
+                    </div>
+
+                    <div class="user-info">
+
+                        <h3>
+                            ${escapeHTML(
+                                item.title ||
+                                item.headline ||
+                                "Latest News"
+                            )}
+                        </h3>
+
+                        <span>
+                            ${escapeHTML(
+                                item.time ||
+                                item.date ||
+                                "Today"
+                            )}
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <p class="update-text">
+                    ${escapeHTML(
+                        item.description ||
+                        item.content ||
+                        ""
+                    )}
+                </p>
+
+            </div>
+
+        `;
+
+    });
+}
+
+
+// ==================================================
+// VIDEOS SCREEN
+// ==================================================
+
+async function showVideos() {
+
+    const videos =
+        await loadVideos();
+
+    const container =
+        document.getElementById("updatesContainer");
+
+    container.innerHTML = "";
+
+    if (!videos.length) {
+
+        container.innerHTML = `
+            <div class="update-card">
+                <p class="update-text">
+                    No videos available yet 🎬
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+    videos.forEach(video => {
+
+        const title =
+            video.title ||
+            video.name ||
+            "Elvish Army Video";
+
+        const url =
+            video.url ||
+            video.video_url ||
+            video.link ||
+            "";
+
+        container.innerHTML += `
+
+            <div class="update-card">
+
+                <div class="avatar">
+                    🎬
+                </div>
+
+                <h3 style="margin-top:12px;">
+                    ${escapeHTML(title)}
+                </h3>
+
+                ${
+                    url
+                    ?
+                    `
+                    <button
+                        class="join-btn"
+                        onclick="openVideo('${escapeHTML(url)}')"
+                    >
+                        ▶ WATCH VIDEO
+                    </button>
+                    `
+                    :
+                    ""
+                }
+
+            </div>
+
+        `;
+
+    });
+}
+
+
+function openVideo(url) {
+
+    if (!url) return;
+
+    window.open(
+        url,
+        "_blank"
+    );
+
+}
+
+
+// ==================================================
+// PHOTOS SCREEN
+// ==================================================
+
+async function showPhotos() {
+
+    const photos =
+        await loadPhotos();
+
+    const container =
+        document.getElementById("updatesContainer");
+
+    container.innerHTML = "";
+
+    if (!photos.length) {
+
+        container.innerHTML = `
+            <div class="update-card">
+                <p class="update-text">
+                    No photos available yet 📸
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+    photos.forEach(photo => {
+
+        const image =
+            photo.image_url ||
+            photo.image ||
+            photo.url ||
+            "";
+
+        const title =
+            photo.title ||
+            "Elvish Army";
+
+        container.innerHTML += `
+
+            <div class="update-card">
+
+                ${
+                    image
+                    ?
+                    `
+                    <img
+                        src="${escapeHTML(image)}"
+                        alt="${escapeHTML(title)}"
+                        style="
+                            width:100%;
+                            border-radius:15px;
+                            display:block;
+                        "
+                    >
+                    `
+                    :
+                    ""
+                }
+
+                <h3 style="margin-top:12px;">
+                    ${escapeHTML(title)}
+                </h3>
+
+            </div>
+
+        `;
+
+    });
+}
+
+
+// ==================================================
+// COMMUNITY
+// ==================================================
+
+async function showCommunity() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/community`
+            );
+
+        if (!response.ok) {
+            throw new Error("Community API Error");
+        }
+
+        const data =
+            await response.json();
+
+        const container =
+            document.getElementById(
+                "updatesContainer"
+            );
+
+        container.innerHTML = "";
+
+        const posts =
+            data.posts || [];
+
+        if (!posts.length) {
+
+            container.innerHTML = `
+                <div class="update-card">
+                    <p class="update-text">
+                        No community posts yet 👥
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+        posts.forEach(post => {
+
+            container.innerHTML += `
+
+                <div class="update-card">
+
+                    <div class="update-top">
+
+                        <div class="avatar">
+                            👤
+                        </div>
+
+                        <div class="user-info">
+
+                            <h3>
+                                ${escapeHTML(
+                                    post.username
+                                )}
+                            </h3>
+
+                            <span>
+                                ${escapeHTML(
+                                    post.created_at ||
+                                    "Today"
+                                )}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <p class="update-text">
+                        ${escapeHTML(
+                            post.content
+                        )}
+                    </p>
+
+                    <div class="actions">
+
+                        ❤️ ${post.likes || 0}
+
+                        💬 ${post.comments || 0}
+
+                    </div>
+
+                </div>
+
+            `;
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Community:",
+            error
+        );
+
+    }
+}
+
+
+// ==================================================
+// NAVIGATION
+// ==================================================
+
+async function openSection(section) {
+
+    // HOME
+    if (section === "Home") {
+
+        location.reload();
+
+        return;
+    }
+
+
+    // NEWS
+    if (section === "News") {
+
+        changeTitle("📰 Latest News");
+
+        await showNews();
+
+        return;
+    }
+
+
+    // VIDEOS
+    if (section === "Videos") {
+
+        changeTitle("🎬 Videos");
+
+        await showVideos();
+
+        return;
+    }
+
+
+    // PHOTOS
+    if (section === "Photos") {
+
+        changeTitle("📸 Photos");
+
+        await showPhotos();
+
+        return;
+    }
+
+
+    // COMMUNITY
+    if (section === "Community") {
+
+        changeTitle("👥 Community");
+
+        await showCommunity();
+
+        return;
+    }
+
+
+    // PROFILE
+    if (section === "Profile") {
+
+        changeTitle("👤 Profile");
+
+        showProfile();
+
+        return;
+    }
+
+
+    // QUIZ
+    if (section === "Quiz") {
+
+        changeTitle("🧠 Quiz");
+
+        showQuiz();
+
+        return;
+    }
+
+
+    if (section === "Poll") {
+
+    document.getElementById(
+        "updatesContainer"
+    ).style.display = "none";
+
+    document.getElementById(
+        "pollScreen"
+    ).style.display = "block";
+
+    loadPolls();
+
+    return;
+}
+
+}
+
+
+// ==================================================
+// CHANGE PAGE TITLE
+// ==================================================
+
+function changeTitle(title) {
+
+    const titleElement =
+        document.querySelector(
+            ".section-title h2"
+        );
+
+    if (titleElement) {
+
+        titleElement.innerText =
+            title;
+
+    }
+
+}
+
+// ==================================================
+// VOTE POLL
+// ==================================================
+
+async function votePoll(pollId, option) {
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/api/polls/${pollId}/vote/${option}`,
+            {
+                method: "POST"
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Vote failed"
+            );
+
+        }
+
+        if (data.changed) {
+
+            alert(
+                "Aapka vote change ho gaya 🔄🔥"
+            );
+
+        } else {
+
+            alert(
+                "Vote successfully submit ho gaya 🗳️🔥"
+            );
+
+        }
+
+        await loadPolls();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Vote error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Vote submit nahi ho paya 😕"
+        );
+
+    }
+
+}
+
+
+// ==================================================
+// LOAD POLLS
+// ==================================================
+
+async function loadPolls() {
+
+    const container =
+        document.getElementById(
+            "pollContainer"
+        );
+
+    if (!container) return;
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/polls`
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Poll API Error"
+            );
+
+        }
+
+        const data =
+            await response.json();
+
+        const polls =
+            data.polls || [];
+
+        container.innerHTML = "";
+
+
+        if (!polls.length) {
+
+            container.innerHTML = `
+
+                <div class="update-card">
+
+                    <div class="avatar">
+                        🗳️
+                    </div>
+
+                    <p class="update-text">
+                        Abhi koi active poll nahi hai.
+                    </p>
+
+                </div>
+
+            `;
+
+            return;
+        }
+
+
+        polls.forEach(poll => {
+
+            const votes1 =
+                Number(poll.votes1 || 0);
+
+            const votes2 =
+                Number(poll.votes2 || 0);
+
+            const total =
+                votes1 + votes2;
+
+
+            const percent1 =
+                total > 0
+                ? Math.round(
+                    (votes1 / total) * 100
+                )
+                : 0;
+
+
+            const percent2 =
+                total > 0
+                ? Math.round(
+                    (votes2 / total) * 100
+                )
+                : 0;
+
+
+            container.innerHTML += `
+
+                <div class="update-card">
+
+                    <!-- HEADER -->
+
+                    <div class="update-top">
+
+                        <div class="avatar">
+                            🗳️
+                        </div>
+
+                        <div class="user-info">
+
+                            <h3>
+                                ${escapeHTML(
+                                    poll.question
+                                )}
+                            </h3>
+
+                            <span>
+                                Elvish Army Poll
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- OPTION BUTTON 1 -->
+
+                    <button
+                        class="join-btn"
+                        style="
+                            width:100%;
+                            margin-top:16px;
+                        "
+                        onclick="
+                            votePoll(
+                                ${poll.id},
+                                1
+                            )
+                        "
+                    >
+                        ${escapeHTML(
+                            poll.option1
+                        )}
+                    </button>
+
+
+                    <!-- OPTION BUTTON 2 -->
+
+                    <button
+                        class="join-btn"
+                        style="
+                            width:100%;
+                            margin-top:10px;
+                        "
+                        onclick="
+                            votePoll(
+                                ${poll.id},
+                                2
+                            )
+                        "
+                    >
+                        ${escapeHTML(
+                            poll.option2
+                        )}
+                    </button>
+
+
+                    <!-- RESULTS -->
+
+                    <div class="poll-result">
+
+                        <strong>
+                            📊 Results
+                        </strong>
+
+
+                        <!-- OPTION 1 RESULT -->
+
+                        <div class="poll-result-row">
+
+                            <div class="poll-result-top">
+
+                                <span>
+                                    ${escapeHTML(
+                                        poll.option1
+                                    )}
+                                </span>
+
+                                <span class="poll-percent">
+                                    ${percent1}%
+                                </span>
+
+                            </div>
+
+                            <div class="poll-bar">
+
+                                <div
+                                    class="poll-bar-fill"
+                                    style="
+                                        width:${percent1}%;
+                                    "
+                                ></div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- OPTION 2 RESULT -->
+
+                        <div class="poll-result-row">
+
+                            <div class="poll-result-top">
+
+                                <span>
+                                    ${escapeHTML(
+                                        poll.option2
+                                    )}
+                                </span>
+
+                                <span class="poll-percent">
+                                    ${percent2}%
+                                </span>
+
+                            </div>
+
+                            <div class="poll-bar">
+
+                                <div
+                                    class="poll-bar-fill"
+                                    style="
+                                        width:${percent2}%;
+                                    "
+                                ></div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="poll-total">
+
+                            Total Votes:
+                            ${total}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            `;
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Poll loading error:",
+            error
+        );
+
+        container.innerHTML = `
+
+            <div class="update-card">
+
+                <p class="update-text">
+                    Poll load nahi ho paya 😕
+                </p>
+
+            </div>
+
+        `;
+
+    }
+}
+
+// ==================================================
+// CREATE COMMUNITY POST
+// ==================================================
+
+async function createCommunityPost() {
+
+    const username =
+        document
+            .getElementById("communityUsername")
+            .value
+            .trim();
+
+    const content =
+        document
+            .getElementById("communityContent")
+            .value
+            .trim();
+
+    const fileInput =
+        document.getElementById("communityMedia");
+
+    const file =
+        fileInput.files[0];
+
+
+    if (!username) {
+
+        alert("Apna naam enter karo 👤");
+
+        return;
+    }
+
+
+    if (!content && !file) {
+
+        alert(
+            "Post me text ya photo/video add karo 🔥"
+        );
+
+        return;
+    }
+
+
+    try {
+
+        let mediaUrl = "";
+
+        let mediaType = "";
+
+
+        // =====================================
+        // UPLOAD MEDIA
+        // =====================================
+
+        if (file) {
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                "file",
+                file
+            );
+
+
+            const uploadResponse =
+                await fetch(
+                    `${API_URL}/api/community/upload`,
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+
+            const uploadData =
+                await uploadResponse.json();
+
+
+            if (!uploadResponse.ok) {
+
+                throw new Error(
+                    uploadData.detail ||
+                    "Media upload failed"
+                );
+
+            }
+
+
+            mediaUrl =
+                uploadData.url;
+
+            mediaType =
+                uploadData.content_type;
+
+        }
+
+
+        // =====================================
+        // CREATE POST
+        // =====================================
+
+        const response =
+            await fetch(
+                `${API_URL}/api/community`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        user_id:
+                            "user_" +
+                            Date.now(),
+
+                        username:
+                            username,
+
+                        content:
+                            content,
+
+                        media_url:
+                            mediaUrl,
+
+                        media_type:
+                            mediaType
+
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+           typeof data.detail === "string"
+            ? data.detail
+            : JSON.stringify(data.detail)
+          );
+
+        }
+
+
+        alert(
+            "Post successfully publish ho gaya 🔥"
+        );
+
+
+        // =====================================
+        // RESET
+        // =====================================
+
+        document
+            .getElementById(
+                "communityUsername"
+            )
+            .value = "";
+
+        document
+            .getElementById(
+                "communityContent"
+            )
+            .value = "";
+
+        fileInput.value = "";
+
+        document
+            .getElementById(
+                "mediaPreview"
+            )
+            .innerHTML = "";
+
+
+        // Reload community
+
+        await loadCommunityPosts();
+
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Community post error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Post publish nahi ho paya 😕"
+        );
+
+    }
+
+}
+
+// ==================================================
+// LOAD COMMUNITY POSTS - FINAL
+// PHOTO + VIDEO + LIKES + COMMENTS + SHARE
+// ==================================================
+
+async function loadCommunityPosts() {
+
+    const container =
+        document.getElementById("communityContainer");
+
+    if (!container) return;
+
+    try {
+
+        // ==========================================
+        // CURRENT USER ID
+        // ==========================================
+
+        let userId =
+            localStorage.getItem("elvish_user_id");
+
+        if (!userId) {
+
+            userId =
+                "user_" +
+                crypto.randomUUID();
+
+            localStorage.setItem(
+                "elvish_user_id",
+                userId
+            );
+        }
+
+
+        // ==========================================
+        // LOAD POSTS
+        // ==========================================
+
+        const response = await fetch(
+            `${API_URL}/api/community?user_id=${encodeURIComponent(userId)}`
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Community API Error"
+            );
+
+        }
+
+
+        const posts =
+            data.posts || [];
+
+        container.innerHTML = "";
+
+
+        // ==========================================
+        // NO POSTS
+        // ==========================================
+
+        if (!posts.length) {
+
+            container.innerHTML = `
+
+                <div class="update-card">
+
+                    <div class="avatar">
+                        👥
+                    </div>
+
+                    <p class="update-text">
+
+                        Abhi community me
+                        koi post nahi hai.
+
+                        <br><br>
+
+                        Pehla post tum karo 🔥
+
+                    </p>
+
+                </div>
+
+            `;
+
+            return;
+        }
+
+
+        // ==========================================
+        // POSTS
+        // ==========================================
+
+        posts.forEach(post => {
+
+            const card =
+                document.createElement("div");
+
+            card.className =
+                "update-card";
+
+
+            // ==========================================
+            // MEDIA URL
+            // ==========================================
+
+            let mediaURL = "";
+
+            if (post.media_url) {
+
+                mediaURL =
+                    post.media_url;
+
+            }
+
+            else if (post.image_url) {
+
+                mediaURL =
+                    post.image_url;
+
+            }
+
+
+            // ==========================================
+            // FIX MEDIA URL
+            // ==========================================
+
+            if (mediaURL) {
+
+                if (
+                    !mediaURL.startsWith("http")
+                ) {
+
+                    mediaURL =
+                        `${API_URL}${
+                            mediaURL.startsWith("/")
+                                ? ""
+                                : "/"
+                        }${mediaURL}`;
+
+                }
+
+            }
+
+
+            // ==========================================
+            // MEDIA HTML
+            // ==========================================
+
+            let mediaHTML = "";
+
+
+            if (mediaURL) {
+
+
+                // ======================================
+                // VIDEO
+                // ======================================
+
+                if (
+                    post.media_type &&
+                    post.media_type.startsWith(
+                        "video/"
+                    )
+                ) {
+
+                    mediaHTML = `
+
+                        <div
+                            style="
+                                margin-top:12px;
+                                width:100%;
+                                overflow:hidden;
+                                border-radius:14px;
+                                background:#000;
+                            "
+                        >
+
+                            <video
+                                controls
+                                playsinline
+                                preload="metadata"
+                                style="
+                                    width:100%;
+                                    display:block;
+                                    max-height:600px;
+                                    background:#000;
+                                "
+                            >
+
+                                <source
+                                    src="${escapeHTML(
+                                        mediaURL
+                                    )}"
+                                    type="${escapeHTML(
+                                        post.media_type
+                                    )}"
+                                >
+
+                                Your browser does not
+                                support video.
+
+                            </video>
+
+                        </div>
+
+                    `;
+
+                }
+
+
+                // ======================================
+                // IMAGE
+                // ======================================
+
+                else {
+
+                    mediaHTML = `
+
+                        <img
+                            src="${escapeHTML(
+                                mediaURL
+                            )}"
+                            alt="Community Photo"
+                            loading="lazy"
+                            style="
+                                width:100%;
+                                margin-top:12px;
+                                border-radius:14px;
+                                display:block;
+                                max-height:600px;
+                                object-fit:cover;
+                                background:#111;
+                            "
+                            onerror="
+                                console.error(
+                                    'Community media failed:',
+                                    this.src
+                                );
+                                this.style.display='none';
+                            "
+                        >
+
+                    `;
+
+                }
+
+            }
+
+
+            // ==========================================
+            // LIKE STATUS
+            // ==========================================
+
+            const isLiked =
+                post.liked === 1 ||
+                post.liked === true;
+
+
+            const likeIcon =
+                isLiked
+                    ? "❤️"
+                    : "🤍";
+
+
+            const likeText =
+                isLiked
+                    ? "Liked"
+                    : "Like";
+
+
+            // ==========================================
+            // POST CARD
+            // ==========================================
+
+            card.innerHTML = `
+
+                <div class="update-top">
+
+                    <div class="avatar">
+                        👤
+                    </div>
+
+                    <div class="user-info">
+
+                        <h3>
+                            ${escapeHTML(
+                                post.username ||
+                                "Elvish Army"
+                            )}
+                        </h3>
+
+                        <span>
+                            ${escapeHTML(
+                                post.created_at ||
+                                "Just now"
+                            )}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                ${
+                    post.content
+                    ? `
+
+                        <p class="update-text">
+
+                            ${escapeHTML(
+                                post.content
+                            )}
+
+                        </p>
+
+                    `
+                    : ""
+                }
+
+
+                ${mediaHTML}
+
+
+                <!-- ACTIONS -->
+
+                <div class="actions">
+
+                    <div
+                        class="action"
+                        onclick="
+                            likeCommunityPost(
+                                ${post.id}
+                            )
+                        "
+                    >
+
+                        ${likeIcon}
+                        ${likeText}
+                        ${post.likes || 0}
+
+                    </div>
+
+
+                    <div
+                        class="action"
+                        onclick="
+                            openCommunityComments(
+                                ${post.id}
+                            )
+                        "
+                    >
+
+                        💬
+                        ${post.comments || 0}
+
+                    </div>
+
+
+                    <div
+                        class="action"
+                        onclick="
+                            shareCommunityPost(
+                                ${post.id}
+                            )
+                        "
+                    >
+
+                        📤 Share
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            container.appendChild(card);
+
+        });
+
+    }
+
+
+    // ==========================================
+    // ERROR
+    // ==========================================
+
+    catch (error) {
+
+        console.error(
+            "Community loading error:",
+            error
+        );
+
+        container.innerHTML = `
+
+            <div class="update-card">
+
+                <div class="avatar">
+                    ⚠️
+                </div>
+
+                <p class="update-text">
+
+                    Community load nahi ho payi 😕
+
+                    <br><br>
+
+                    Server connection check karo.
+
+                </p>
+
+            </div>
+
+        `;
+
+    }
+
+}
+
+// ==================================================
+// COMMUNITY LIKE / UNLIKE
+// ==================================================
+
+async function likeCommunityPost(postId) {
+
+    try {
+
+        let userId =
+            localStorage.getItem("elvish_user_id");
+
+        if (!userId) {
+
+            userId =
+                "user_" +
+                crypto.randomUUID();
+
+            localStorage.setItem(
+                "elvish_user_id",
+                userId
+            );
+        }
+
+        const response = await fetch(
+            `${API_URL}/api/community/${postId}/like`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    user_id: userId
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Like failed"
+            );
+        }
+
+        console.log(
+            data.liked
+                ? "Post liked ❤️"
+                : "Post unliked 🤍"
+        );
+
+        // Refresh posts
+        await loadCommunityPosts();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Community like error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Like nahi ho paya 😕"
+        );
+
+    }
+
+}
+// ==================================================
+// COMMUNITY COMMENTS
+// ==================================================
+
+async function openCommunityComments(postId) {
+
+    const comment =
+        prompt("Apna comment likho 💬");
+
+    if (!comment || !comment.trim()) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/api/community/${postId}/comment`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+                    comment: comment.trim()
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Comment failed"
+            );
+
+        }
+
+        alert("Comment added 💬🔥");
+
+        await loadCommunityPosts();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Community comment error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Comment nahi ho paya 😕"
+        );
+
+    }
+
+}
+
+
+
+// ==================================================
+// COMMUNITY SHARE
+// ==================================================
+
+async function shareCommunityPost(postId) {
+
+    try {
+
+        const shareURL =
+            `${window.location.origin}${window.location.pathname}?post=${postId}`;
+
+        if (navigator.share) {
+
+            await navigator.share({
+
+                title:
+                    "Elvish Army Community 🔥",
+
+                text:
+                    "Check out this Elvish Army community post 👑",
+
+                url:
+                    shareURL
+
+            });
+
+        }
+
+        else {
+
+            await navigator.clipboard.writeText(
+                shareURL
+            );
+
+            alert(
+                "Post link copied 📋🔥"
+            );
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.log(
+            "Share cancelled:",
+            error
+        );
+
+    }
+
+}
+
+
+function previewCommunityMedia(input) {
+
+    const preview =
+        document.getElementById("mediaPreview");
+
+    preview.innerHTML = "";
+
+    const file = input.files[0];
+
+    if (!file) return;
+
+    const url =
+        URL.createObjectURL(file);
+
+    if (file.type.startsWith("image/")) {
+
+        preview.innerHTML = `
+            <img
+                src="${url}"
+                alt="Preview"
+            >
+        `;
+
+    }
+
+    else if (file.type.startsWith("video/")) {
+
+        preview.innerHTML = `
+            <video
+                src="${url}"
+                controls
+                playsinline
+            ></video>
+        `;
+
+    }
+
+}
+
+
+// ==================================================
+// PROFILE
+// ==================================================
+
+function showProfile() {
+
+    const container =
+        document.getElementById(
+            "updatesContainer"
+        );
+
+    container.innerHTML = `
+
+        <div class="update-card">
+
+            <div class="avatar">
+                👤
+            </div>
+
+            <h3 style="margin-top:12px;">
+                Elvish Army Fan
+            </h3>
+
+            <p class="update-text">
+                Welcome to Elvish Army community 🔥
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
+// ==================================================
+// QUIZ
+// ==================================================
+
+function showQuiz() {
+
+    const container =
+        document.getElementById(
+            "updatesContainer"
+        );
+
+    container.innerHTML = `
+
+        <div class="update-card">
+
+            <div class="avatar">
+                🧠
+            </div>
+
+            <h3 style="margin-top:12px;">
+                Elvish Army Quiz
+            </h3>
+
+            <p class="update-text">
+                Quiz system ready hai bhai.
+                Next step me isko database + admin
+                se connect karenge. 🔥
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
+// ==================================================
+// LIKE
+// ==================================================
+
+function likePost(element) {
+
+    if (
+        element.innerText.includes("Like")
+    ) {
+
+        element.innerText =
+            "❤️ Liked";
+
+        element.style.color =
+            "#f5b400";
+
+    }
+
+}
+
+
+// ==================================================
+// SHARE
+// ==================================================
+
+async function sharePost(title) {
+
+    if (navigator.share) {
+
+        try {
+
+            await navigator.share({
+
+                title: "Elvish Army",
+
+                text: title
+
+            });
+
+        } catch (error) {
+
+            console.log(
+                "Share cancelled"
+            );
+
+        }
+
+    } else {
+
+        alert(
+            "Share: " + title
+        );
+
+    }
+
+}
+
+
+// ==================================================
+// JOIN
+// ==================================================
+
+function joinArmy() {
+
+    alert(
+        "Welcome to Elvish Army! 🔥"
+    );
+
+}
+
+
+// ==================================================
+// ESCAPE HTML
+// ==================================================
+
+function escapeHTML(value) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        value ?? "";
+
+    return div.innerHTML;
+
+}
+
+// ==================================================
+// COMMUNITY COMMENTS
+// ==================================================
+
+let activeCommunityPostId = null;
+let activeCommunityReplyId = null;
+
+
+// ==================================================
+// USER ID
+// ==================================================
+
+function getCommunityUserId() {
+
+    let userId =
+        localStorage.getItem(
+            "elvish_user_id"
+        );
+
+    if (!userId) {
+
+        userId =
+            "user_" +
+            crypto.randomUUID();
+
+        localStorage.setItem(
+            "elvish_user_id",
+            userId
+        );
+    }
+
+    return userId;
+}
+
+
+// ==================================================
+// OPEN COMMENTS
+// ==================================================
+
+async function openCommunityComments(postId) {
+
+    activeCommunityPostId = postId;
+    activeCommunityReplyId = null;
+
+    const modal =
+        document.getElementById(
+            "communityCommentsModal"
+        );
+
+    modal.style.display = "flex";
+
+    cancelCommunityReply();
+
+    await loadCommunityComments(postId);
+}
+
+
+// ==================================================
+// CLOSE COMMENTS
+// ==================================================
+
+function closeCommunityComments() {
+
+    const modal =
+        document.getElementById(
+            "communityCommentsModal"
+        );
+
+    modal.style.display = "none";
+
+    activeCommunityPostId = null;
+    activeCommunityReplyId = null;
+}
+
+
+// ==================================================
+// LOAD COMMENTS
+// ==================================================
+
+async function loadCommunityComments(postId) {
+
+    const container =
+        document.getElementById(
+            "communityCommentsList"
+        );
+
+    container.innerHTML = `
+        <p style="text-align:center;padding:30px;">
+            Loading comments...
+        </p>
+    `;
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/community/${postId}/comments`
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Comments load failed"
+            );
+        }
+
+        const comments =
+            data.comments || [];
+
+        container.innerHTML = "";
+
+        if (!comments.length) {
+
+            container.innerHTML = `
+                <div
+                    style="
+                        text-align:center;
+                        padding:40px 10px;
+                        color:#777;
+                    "
+                >
+                    <div style="font-size:40px;">
+                        💬
+                    </div>
+
+                    <p>
+                        Abhi koi comment nahi hai.
+                    </p>
+
+                    <p>
+                        Pehla comment tum karo 🔥
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+
+        // ------------------------------------------
+        // MAIN COMMENTS
+        // ------------------------------------------
+
+        const mainComments =
+            comments.filter(
+                comment =>
+                    !comment.parent_id
+            );
+
+
+        mainComments.forEach(comment => {
+
+            container.innerHTML +=
+                renderCommunityComment(
+                    comment,
+                    comments
+                );
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Comments error:",
+            error
+        );
+
+        container.innerHTML = `
+            <p
+                style="
+                    text-align:center;
+                    padding:30px;
+                "
+            >
+                Comments load nahi ho paye 😕
+            </p>
+        `;
+    }
+}
+
+
+// ==================================================
+// RENDER COMMUNITY COMMENT + REPLIES
+// ==================================================
+
+function renderCommunityComment(
+    comment,
+    allComments
+) {
+
+    const replies =
+        allComments.filter(
+            reply =>
+                Number(reply.parent_id) ===
+                Number(comment.id)
+        );
+
+
+    let repliesHTML = "";
+
+
+    replies.forEach(reply => {
+
+        repliesHTML += `
+
+            <div
+                style="
+                    margin-left:45px;
+                    margin-top:12px;
+                    padding:11px 12px;
+                    background:linear-gradient(
+                        135deg,
+                        rgba(131,58,180,.18),
+                        rgba(255,20,147,.10)
+                    );
+                    border:1px solid rgba(255,255,255,.08);
+                    border-radius:15px;
+                "
+            >
+
+                <div
+                    style="
+                        display:flex;
+                        gap:9px;
+                    "
+                >
+
+                    <div
+                        style="
+                            width:32px;
+                            height:32px;
+                            border-radius:50%;
+                            background:linear-gradient(
+                                135deg,
+                                #833ab4,
+                                #e1306c
+                            );
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            flex-shrink:0;
+                            font-size:17px;
+                        "
+                    >
+                        👤
+                    </div>
+
+
+                    <div style="flex:1;">
+
+                        <strong
+                            style="
+                                color:#ffffff;
+                                font-size:14px;
+                            "
+                        >
+                            ${escapeHTML(
+                                reply.username ||
+                                "User"
+                            )}
+                        </strong>
+
+
+                        <div
+                            style="
+                                margin-top:5px;
+                                font-size:14px;
+                                color:#ffffff;
+                                line-height:1.4;
+                            "
+                        >
+                            ${escapeHTML(
+                                reply.comment
+                            )}
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    style="
+                        display:flex;
+                        gap:18px;
+                        margin-top:9px;
+                        margin-left:41px;
+                        font-size:13px;
+                    "
+                >
+
+                    <span
+                        onclick="
+                            likeCommunityComment(
+                                ${reply.id}
+                            )
+                        "
+                        style="
+                            cursor:pointer;
+                            color:#ff6b9d;
+                            font-weight:700;
+                        "
+                    >
+                        ❤️ ${reply.likes || 0}
+                    </span>
+
+                </div>
+
+            </div>
+
+        `;
+    });
+
+
+    return `
+
+        <div
+            style="
+                margin-bottom:20px;
+            "
+        >
+
+            <!-- MAIN COMMENT -->
+
+            <div
+                style="
+                    display:flex;
+                    gap:10px;
+                "
+            >
+
+                <div
+                    style="
+                        width:40px;
+                        height:40px;
+                        border-radius:50%;
+                        background:linear-gradient(
+                            135deg,
+                            #833ab4,
+                            #e1306c,
+                            #fd1d1d,
+                            #fcb045
+                        );
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        flex-shrink:0;
+                        font-size:20px;
+                    "
+                >
+                    👤
+                </div>
+
+
+                <div style="flex:1;">
+
+                    <strong
+                        style="
+                            color:#ffffff;
+                            font-size:15px;
+                        "
+                    >
+                        ${escapeHTML(
+                            comment.username ||
+                            "User"
+                        )}
+                    </strong>
+
+
+                    <div
+                        style="
+                            margin-top:5px;
+                            font-size:15px;
+                            color:#ffffff;
+                            line-height:1.45;
+                            word-break:break-word;
+                        "
+                    >
+                        ${escapeHTML(
+                            comment.comment
+                        )}
+                    </div>
+
+
+                    <!-- ACTIONS -->
+
+                    <div
+                        style="
+                            display:flex;
+                            align-items:center;
+                            gap:20px;
+                            margin-top:9px;
+                            font-size:13px;
+                        "
+                    >
+
+                        <!-- LIKE -->
+
+                        <span
+                            onclick="
+                                likeCommunityComment(
+                                    ${comment.id}
+                                )
+                            "
+                            style="
+                                cursor:pointer;
+                                color:#ff6b9d;
+                                font-weight:700;
+                            "
+                        >
+                            ❤️ ${comment.likes || 0}
+                        </span>
+
+
+                        <!-- REPLY -->
+
+                        <span
+                            onclick="
+                                replyToCommunityComment(
+                                    ${comment.id},
+                                    '${escapeHTML(
+                                        comment.username ||
+                                        "User"
+                                    )}'
+                                )
+                            "
+                            style="
+                                cursor:pointer;
+                                color:#b98cff;
+                                font-weight:800;
+                            "
+                        >
+                            ↩️ Reply
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- REPLIES -->
+
+            ${repliesHTML}
+
+        </div>
+
+    `;
+}
+
+
+// ==================================================
+// REPLY TO COMMENT
+// ==================================================
+
+function replyToCommunityComment(
+    commentId,
+    username
+) {
+
+    activeCommunityReplyId =
+        commentId;
+
+
+    const replyBox =
+        document.getElementById(
+            "communityReplyBox"
+        );
+
+
+    const replyUsername =
+        document.getElementById(
+            "communityReplyUsername"
+        );
+
+
+    const input =
+        document.getElementById(
+            "communityCommentInput"
+        );
+
+
+    if (replyBox) {
+
+        replyBox.style.display =
+            "block";
+    }
+
+
+    if (replyUsername) {
+
+        replyUsername.textContent =
+            "@" + username;
+    }
+
+
+    if (input) {
+
+        input.placeholder =
+            "Reply to @" +
+            username +
+            "...";
+
+        input.focus();
+    }
+
+}
+
+
+// ==================================================
+// CANCEL REPLY
+// ==================================================
+
+function cancelCommunityReply() {
+
+    activeCommunityReplyId = null;
+
+    const box =
+        document.getElementById(
+            "communityReplyBox"
+        );
+
+    if (box) {
+        box.style.display = "none";
+    }
+}
+
+
+// ==================================================
+// SUBMIT COMMENT / REPLY
+// ==================================================
+
+async function submitCommunityComment() {
+
+    const input =
+        document.getElementById(
+            "communityCommentInput"
+        );
+
+    const comment =
+        input.value.trim();
+
+    if (!comment) return;
+
+    if (!activeCommunityPostId) return;
+
+
+    const userId =
+        getCommunityUserId();
+
+
+    // Demo username
+    let username =
+        localStorage.getItem(
+            "elvish_username"
+        ) ||
+        "Elvish User";
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/community/${activeCommunityPostId}/comment`,
+                {
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:JSON.stringify({
+
+                        user_id:userId,
+
+                        username:username,
+
+                        comment:comment,
+
+                        parent_id:
+                            activeCommunityReplyId
+
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Comment failed"
+            );
+        }
+
+
+        input.value = "";
+
+        cancelCommunityReply();
+
+        await loadCommunityComments(
+            activeCommunityPostId
+        );
+
+        await loadCommunityPosts();
+
+    }
+
+    catch(error) {
+
+        console.error(
+            "Comment error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Comment nahi ho paya 😕"
+        );
+    }
+}
+
+
+// ==================================================
+// START
+// ==================================================
+
+async function startApp() {
+
+    console.log(
+        "Elvish Army App Started 🔥"
+    );
+
+    await loadUpdates();
+
+    await loadNews();
+
+    await loadVideos();
+
+    await loadPhotos();
+
+    await loadNotifications();
+
+    await loadPolls();
+
+    await loadCommunityPosts();
+
+}
+
+
+// START APP
+startApp();
+
+</script>
+
+<!-- ==================================================
+     COMMUNITY COMMENTS MODAL - COLORFUL
+================================================== -->
+
+<div
+    id="communityCommentsModal"
+    style="
+        display:none;
+        position:fixed;
+        inset:0;
+        z-index:99999;
+        background:rgba(0,0,0,.78);
+        align-items:flex-end;
+        justify-content:center;
+        backdrop-filter:blur(5px);
+    "
+>
+
+    <div
+        style="
+            width:100%;
+            max-width:600px;
+            height:85vh;
+            background:linear-gradient(
+                160deg,
+                #15151f,
+                #0d0d14 55%,
+                #17101f
+            );
+            color:#fff;
+            border-radius:24px 24px 0 0;
+            overflow:hidden;
+            display:flex;
+            flex-direction:column;
+            box-shadow:0 -10px 40px rgba(0,0,0,.5);
+        "
+    >
+
+        <!-- ==================================================
+             HEADER
+        ================================================== -->
+
+        <div
+            style="
+                padding:16px 18px;
+                display:flex;
+                align-items:center;
+                justify-content:space-between;
+                border-bottom:1px solid rgba(255,255,255,.12);
+                background:rgba(255,255,255,.04);
+            "
+        >
+
+            <div
+                style="
+                    font-size:18px;
+                    font-weight:800;
+                    color:#fff;
+                "
+            >
+                Comments
+                <span
+                    style="
+                        margin-left:5px;
+                    "
+                >
+                    💬
+                </span>
+            </div>
+
+
+            <button
+                onclick="closeCommunityComments()"
+                style="
+                    width:36px;
+                    height:36px;
+                    border:0;
+                    border-radius:50%;
+                    background:rgba(255,255,255,.1);
+                    color:#fff;
+                    font-size:19px;
+                    cursor:pointer;
+                "
+            >
+                ✕
+            </button>
+
+        </div>
+
+
+        <!-- ==================================================
+             COMMENTS LIST
+        ================================================== -->
+
+        <div
+            id="communityCommentsList"
+            style="
+                flex:1;
+                overflow-y:auto;
+                padding:16px;
+                color:#fff;
+            "
+        ></div>
+
+
+        <!-- ==================================================
+             REPLY INDICATOR
+        ================================================== -->
+
+        <div
+            id="communityReplyBox"
+            style="
+                display:none;
+                padding:9px 16px;
+                background:linear-gradient(
+                    90deg,
+                    rgba(138,43,226,.25),
+                    rgba(255,20,147,.15)
+                );
+                border-top:1px solid rgba(255,255,255,.08);
+                border-bottom:1px solid rgba(255,255,255,.08);
+                font-size:13px;
+                color:#fff;
+            "
+        >
+
+            ↩️ Replying to
+
+            <b
+                id="communityReplyUsername"
+                style="
+                    color:#ff66c4;
+                    margin-left:4px;
+                "
+            ></b>
+
+
+            <span
+                onclick="cancelCommunityReply()"
+                style="
+                    float:right;
+                    cursor:pointer;
+                    color:#fff;
+                    font-size:16px;
+                "
+            >
+                ✕
+            </span>
+
+        </div>
+
+
+        <!-- ==================================================
+             COMMENT INPUT
+        ================================================== -->
+
+        <div
+            style="
+                display:flex;
+                gap:9px;
+                padding:12px;
+                background:rgba(0,0,0,.35);
+                border-top:1px solid rgba(255,255,255,.1);
+            "
+        >
+
+            <input
+                id="communityCommentInput"
+                type="text"
+                placeholder="Write a comment..."
+                autocomplete="off"
+                style="
+                    flex:1;
+                    min-width:0;
+                    border:1px solid rgba(255,255,255,.18);
+                    border-radius:24px;
+                    padding:12px 16px;
+                    outline:none;
+                    background:#20202b;
+                    color:#fff;
+                    font-size:14px;
+                    box-sizing:border-box;
+                "
+                onkeydown="
+                    if(event.key==='Enter'){
+                        event.preventDefault();
+                        submitCommunityComment();
+                    }
+                "
+            >
+
+
+            <button
+                onclick="submitCommunityComment()"
+                style="
+                    border:0;
+                    border-radius:24px;
+                    padding:0 19px;
+                    cursor:pointer;
+                    font-weight:800;
+                    color:#fff;
+                    background:linear-gradient(
+                        135deg,
+                        #833ab4,
+                        #e1306c,
+                        #fd1d1d,
+                        #fcb045
+                    );
+                    box-shadow:
+                        0 4px 15px
+                        rgba(225,48,108,.3);
+                "
+            >
+                Send
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
