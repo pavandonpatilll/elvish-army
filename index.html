@@ -561,6 +561,108 @@
     }
 }
 
+
+/* ==================================================
+   SEPARATE APP PAGES + REELS
+================================================== */
+.page-view {
+    display:none;
+    padding: 18px 0 95px;
+}
+
+.page-header {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:0 18px 15px;
+}
+
+.page-back {
+    width:40px;
+    height:40px;
+    border:1px solid #2d2d2d;
+    border-radius:50%;
+    background:#171717;
+    color:#fff;
+    font-size:20px;
+    cursor:pointer;
+}
+
+.page-header h2 {
+    font-size:21px;
+}
+
+.reels-feed {
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
+
+.reel-card {
+    position:relative;
+    width:100%;
+    height:min(78vh, 720px);
+    min-height:520px;
+    border-radius:22px;
+    overflow:hidden;
+    background:#000;
+    border:1px solid #292929;
+    box-shadow:0 15px 45px rgba(0,0,0,.35);
+}
+
+.reel-video,
+.reel-iframe {
+    width:100%;
+    height:100%;
+    display:block;
+    border:0;
+    object-fit:cover;
+    background:#000;
+}
+
+.reel-overlay {
+    position:absolute;
+    left:0; right:0; bottom:0;
+    padding:55px 18px 18px;
+    background:linear-gradient(transparent,rgba(0,0,0,.88));
+    pointer-events:none;
+}
+
+.reel-title {
+    font-size:18px;
+    font-weight:800;
+    color:#fff;
+    text-shadow:0 2px 8px #000;
+}
+
+.reel-label {
+    margin-top:6px;
+    color:#ddd;
+    font-size:12px;
+}
+
+.reel-open {
+    pointer-events:auto;
+    display:inline-block;
+    margin-top:10px;
+    padding:9px 13px;
+    border:0;
+    border-radius:12px;
+    background:#f5b400;
+    color:#000;
+    font-weight:800;
+    cursor:pointer;
+}
+
+@media (max-width:600px) {
+    .page-view { padding-top:10px; }
+    .reel-card {
+        height:calc(100vh - 150px);
+        min-height:480px;
+        border-radius:18px;
+    }
+}
+
 </style>
 </head>
 
@@ -651,34 +753,6 @@
         </button>
     </section>
 
-    <!-- ================= POLL SCREEN ================= -->
-
-<section
-    id="pollScreen"
-    class="app-screen"
-    style="display:none;"
->
-
-    <div class="section">
-
-        <div class="section-title">
-            <h2>🗳️ Fan Poll</h2>
-        </div>
-
-        <div id="pollContainer">
-
-            <div class="update-card">
-                <p class="update-text">
-                    Loading poll...
-                </p>
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
 
     <!-- QUICK MENU -->
     <section class="section">
@@ -699,15 +773,20 @@
                 <p>Videos</p>
             </div>
 
-            <div class="quick-item" onclick="openSection('Photos')">
-                <div class="icon">📸</div>
-                <p>Photos</p>
+            <div class="quick-item" onclick="openSection('Community')">
+                <div class="icon">👥</div>
+                <p>Community</p>
             </div>
 
             <div class="quick-item" onclick="openSection('Poll')">
-            <div class="icon">🗳️</div>
-            <p>Poll</p>
-           </div>
+                <div class="icon">🗳️</div>
+                <p>Poll</p>
+            </div>
+
+            <div class="quick-item" onclick="openSection('Quiz')">
+                <div class="icon">🧠</div>
+                <p>Quiz</p>
+            </div>
 
         </div>
 
@@ -715,14 +794,14 @@
 
 
     <!-- LATEST UPDATES -->
-    <section class="section">
+    <section class="section" id="homeLatestSection">
 
     <div class="section-title">
         <h2>Latest Updates</h2>
         <span class="see-all">See All</span>
     </div>
 
-    <div id="updatesContainer">
+    <div id="homeUpdatesContainer">
 
         <!-- Update 1 -->
         <div class="update-card">
@@ -811,94 +890,18 @@
      COMMUNITY
 ========================================== -->
 
-<section class="section" id="communitySection">
-
-    <div class="section-title">
-
-        <h2>Community 👥</h2>
-
+<!-- ==================================================
+     SEPARATE PAGE VIEW
+================================================== -->
+<section id="pageView" class="page-view">
+    <div class="page-header">
+        <button class="page-back" onclick="goHome()">←</button>
+        <h2 id="pageTitle">Elvish Army</h2>
     </div>
-
-
-    <!-- COMMUNITY CREATE POST -->
-
-<div class="community-create">
-
-    <div class="create-top">
-
-        <div class="avatar">
-            👤
-        </div>
-
-        <input
-            type="text"
-            id="communityUsername"
-            placeholder="Your name"
-            maxlength="30"
-        >
-
-    </div>
-
-    <textarea
-        id="communityContent"
-        placeholder="Elvish Army me kuch share karo... 🔥"
-        maxlength="1000"
-    ></textarea>
-
-    <div
-        id="mediaPreview"
-        class="media-preview"
-    ></div>
-
-    <div class="create-actions">
-
-        <label class="media-btn">
-
-            📸 Photo / 🎥 Video
-
-            <input
-                type="file"
-                id="communityMedia"
-                accept="image/*,video/*"
-                onchange="previewCommunityMedia(this)"
-                hidden
-            >
-
-        </label>
-
-        <button
-            class="post-btn"
-            onclick="createCommunityPost()"
-        >
-            Post 🔥
-        </button>
-
-    </div>
-
-</div>
-
-
-<div id="communityContainer"></div>
-
-
-    <!-- COMMUNITY FEED -->
-
-    <div id="communityContainer">
-
-        <div class="update-card">
-
-            <p class="update-text">
-                Community loading... 🔄
-            </p>
-
-        </div>
-
-    </div>
-
+    <div id="pageContainer" class="section" style="margin-top:0;"></div>
 </section>
 
-
-    <!-- BOTTOM NAVIGATION -->
+<!-- BOTTOM NAVIGATION -->
     <nav class="bottom-nav">
 
         <div class="nav-item active" onclick="openSection('Home')">
@@ -941,7 +944,7 @@ const API_URL = "https://elvish-army-api.onrender.com";
 async function loadUpdates() {
 
     const container =
-        document.getElementById("updatesContainer");
+        document.getElementById("homeUpdatesContainer");
 
     try {
 
@@ -1097,36 +1100,6 @@ async function loadVideos() {
     } catch (error) {
 
         console.error("Videos:", error);
-
-        return [];
-
-    }
-}
-
-
-// ==================================================
-// PHOTOS
-// ==================================================
-
-async function loadPhotos() {
-
-    try {
-
-        const response =
-            await fetch(`${API_URL}/api/photos`);
-
-        if (!response.ok) {
-            throw new Error("Photos API Error");
-        }
-
-        const data =
-            await response.json();
-
-        return data.photos || [];
-
-    } catch (error) {
-
-        console.error("Photos:", error);
 
         return [];
 
@@ -1383,7 +1356,7 @@ async function showNews() {
         await loadNews();
 
     const container =
-        document.getElementById("updatesContainer");
+        document.getElementById("pageContainer");
 
     container.innerHTML = "";
 
@@ -1456,158 +1429,58 @@ async function showNews() {
 
 async function showVideos() {
 
-    const videos =
-        await loadVideos();
+    const videos = await loadVideos();
+    const container = document.getElementById("pageContainer");
+    if (!container) return;
 
-    const container =
-        document.getElementById("updatesContainer");
-
-    container.innerHTML = "";
+    container.innerHTML = `<div class="reels-feed" id="reelsFeed"></div>`;
+    const feed = document.getElementById("reelsFeed");
 
     if (!videos.length) {
-
-        container.innerHTML = `
+        feed.innerHTML = `
             <div class="update-card">
-                <p class="update-text">
-                    No videos available yet 🎬
-                </p>
-            </div>
-        `;
-
+                <p class="update-text">No videos available yet 🎬</p>
+            </div>`;
         return;
     }
 
-    videos.forEach(video => {
+    videos.forEach((video, index) => {
+        const title = video.title || video.name || "Elvish Army Reel";
+        let url = video.url || video.video_url || video.link || "";
+        if (url && !url.startsWith("http")) url = `${API_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 
-        const title =
-            video.title ||
-            video.name ||
-            "Elvish Army Video";
+        const youtube = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([^?&/]+)/i);
+        let media = "";
 
-        const url =
-            video.url ||
-            video.video_url ||
-            video.link ||
-            "";
+        if (youtube) {
+            media = `<iframe class="reel-iframe" src="https://www.youtube.com/embed/${escapeHTML(youtube[1])}?autoplay=0&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+        } else if (url) {
+            media = `<video class="reel-video" controls playsinline preload="metadata" loop poster="${escapeHTML(video.thumbnail || "")}"><source src="${escapeHTML(url)}" type="${escapeHTML(video.content_type || video.media_type || "video/mp4")}"></video>`;
+        } else {
+            media = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:15px;">Video URL unavailable 🎬</div>`;
+        }
 
-        container.innerHTML += `
-
-            <div class="update-card">
-
-                <div class="avatar">
-                    🎬
+        feed.innerHTML += `
+            <article class="reel-card">
+                ${media}
+                <div class="reel-overlay">
+                    <div class="reel-title">${escapeHTML(title)}</div>
+                    <div class="reel-label">Elvish Army • Reel ${index + 1}</div>
+                    ${url ? `<button class="reel-open" onclick="openVideo('${escapeHTML(url)}')">↗ Open video</button>` : ""}
                 </div>
-
-                <h3 style="margin-top:12px;">
-                    ${escapeHTML(title)}
-                </h3>
-
-                ${
-                    url
-                    ?
-                    `
-                    <button
-                        class="join-btn"
-                        onclick="openVideo('${escapeHTML(url)}')"
-                    >
-                        ▶ WATCH VIDEO
-                    </button>
-                    `
-                    :
-                    ""
-                }
-
-            </div>
-
-        `;
-
+            </article>`;
     });
 }
-
 
 function openVideo(url) {
-
     if (!url) return;
-
-    window.open(
-        url,
-        "_blank"
-    );
-
+    window.open(url, "_blank", "noopener,noreferrer");
 }
 
 
 // ==================================================
-// PHOTOS SCREEN
+// PHOTOS REMOVED
 // ==================================================
-
-async function showPhotos() {
-
-    const photos =
-        await loadPhotos();
-
-    const container =
-        document.getElementById("updatesContainer");
-
-    container.innerHTML = "";
-
-    if (!photos.length) {
-
-        container.innerHTML = `
-            <div class="update-card">
-                <p class="update-text">
-                    No photos available yet 📸
-                </p>
-            </div>
-        `;
-
-        return;
-    }
-
-    photos.forEach(photo => {
-
-        const image =
-            photo.image_url ||
-            photo.image ||
-            photo.url ||
-            "";
-
-        const title =
-            photo.title ||
-            "Elvish Army";
-
-        container.innerHTML += `
-
-            <div class="update-card">
-
-                ${
-                    image
-                    ?
-                    `
-                    <img
-                        src="${escapeHTML(image)}"
-                        alt="${escapeHTML(title)}"
-                        style="
-                            width:100%;
-                            border-radius:15px;
-                            display:block;
-                        "
-                    >
-                    `
-                    :
-                    ""
-                }
-
-                <h3 style="margin-top:12px;">
-                    ${escapeHTML(title)}
-                </h3>
-
-            </div>
-
-        `;
-
-    });
-}
 
 
 // ==================================================
@@ -1615,103 +1488,29 @@ async function showPhotos() {
 // ==================================================
 
 async function showCommunity() {
+    const container = document.getElementById("pageContainer");
+    if (!container) return;
 
-    try {
+    container.innerHTML = `
+        <div class="community-create">
+            <div class="create-top">
+                <div class="avatar">👤</div>
+                <input type="text" id="communityUsername" placeholder="Your name" maxlength="30">
+            </div>
+            <textarea id="communityContent" placeholder="Elvish Army me kuch share karo... 🔥" maxlength="1000"></textarea>
+            <div id="mediaPreview" class="media-preview"></div>
+            <div class="create-actions">
+                <label class="media-btn">📸 Photo / 🎥 Video
+                    <input type="file" id="communityMedia" accept="image/*,video/*" onchange="previewCommunityMedia(this)" hidden>
+                </label>
+                <button class="post-btn" onclick="createCommunityPost()">Post 🔥</button>
+            </div>
+        </div>
+        <div id="communityContainer"></div>`;
 
-        const response =
-            await fetch(
-                `${API_URL}/api/community`
-            );
-
-        if (!response.ok) {
-            throw new Error("Community API Error");
-        }
-
-        const data =
-            await response.json();
-
-        const container =
-            document.getElementById(
-                "updatesContainer"
-            );
-
-        container.innerHTML = "";
-
-        const posts =
-            data.posts || [];
-
-        if (!posts.length) {
-
-            container.innerHTML = `
-                <div class="update-card">
-                    <p class="update-text">
-                        No community posts yet 👥
-                    </p>
-                </div>
-            `;
-
-            return;
-        }
-
-        posts.forEach(post => {
-
-            container.innerHTML += `
-
-                <div class="update-card">
-
-                    <div class="update-top">
-
-                        <div class="avatar">
-                            👤
-                        </div>
-
-                        <div class="user-info">
-
-                            <h3>
-                                ${escapeHTML(
-                                    post.username
-                                )}
-                            </h3>
-
-                            <span>
-                                ${escapeHTML(
-                                    post.created_at ||
-                                    "Today"
-                                )}
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    <p class="update-text">
-                        ${escapeHTML(
-                            post.content
-                        )}
-                    </p>
-
-                    <div class="actions">
-
-                        ❤️ ${post.likes || 0}
-
-                        💬 ${post.comments || 0}
-
-                    </div>
-
-                </div>
-
-            `;
-
-        });
-
-    } catch (error) {
-
-        console.error(
-            "Community:",
-            error
-        );
-
-    }
+    const savedName = localStorage.getItem("elvish_username");
+    if (savedName) document.getElementById("communityUsername").value = savedName;
+    await loadCommunityPosts();
 }
 
 
@@ -1721,117 +1520,81 @@ async function showCommunity() {
 
 async function openSection(section) {
 
-    // HOME
+    document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
+    const navTarget = Array.from(document.querySelectorAll(".nav-item")).find(item => item.textContent.trim().toLowerCase().includes(section.toLowerCase()));
+    if (navTarget) navTarget.classList.add("active");
+
+    const homeSections = document.querySelectorAll("body > .hero, body > .section");
+    const pageView = document.getElementById("pageView");
+    const pageContainer = document.getElementById("pageContainer");
+
     if (section === "Home") {
-
-        location.reload();
-
+        goHome();
         return;
     }
 
+    homeSections.forEach(el => el.style.display = "none");
+    if (pageView) pageView.style.display = "block";
+    if (pageContainer) pageContainer.innerHTML = `<div class="update-card"><p class="update-text">Loading... 🔄</p></div>`;
 
-    // NEWS
     if (section === "News") {
-
-        changeTitle("📰 Latest News");
-
+        changePageTitle("📰 Latest News");
         await showNews();
-
         return;
     }
 
-
-    // VIDEOS
     if (section === "Videos") {
-
-        changeTitle("🎬 Videos");
-
+        changePageTitle("🎬 Reels");
         await showVideos();
-
         return;
     }
 
-
-    // PHOTOS
-    if (section === "Photos") {
-
-        changeTitle("📸 Photos");
-
-        await showPhotos();
-
-        return;
-    }
-
-
-    // COMMUNITY
     if (section === "Community") {
-
-        changeTitle("👥 Community");
-
+        changePageTitle("👥 Community");
         await showCommunity();
-
         return;
     }
 
-
-    // PROFILE
     if (section === "Profile") {
-
-        changeTitle("👤 Profile");
-
+        changePageTitle("👤 Profile");
         showProfile();
-
         return;
     }
 
-
-    // QUIZ
     if (section === "Quiz") {
-
-        changeTitle("🧠 Quiz");
-
+        changePageTitle("🧠 Quiz");
         showQuiz();
-
         return;
     }
-
 
     if (section === "Poll") {
-
-    document.getElementById(
-        "updatesContainer"
-    ).style.display = "none";
-
-    document.getElementById(
-        "pollScreen"
-    ).style.display = "block";
-
-    loadPolls();
-
-    return;
-}
-
-}
-
-
-// ==================================================
-// CHANGE PAGE TITLE
-// ==================================================
-
-function changeTitle(title) {
-
-    const titleElement =
-        document.querySelector(
-            ".section-title h2"
-        );
-
-    if (titleElement) {
-
-        titleElement.innerText =
-            title;
-
+        changePageTitle("🗳️ Fan Poll");
+        if (pageContainer) {
+            pageContainer.innerHTML = `
+                <div id="pollContainer">
+                    <div class="update-card"><p class="update-text">Loading poll... 🔄</p></div>
+                </div>`;
+        }
+        await loadPolls();
+        return;
     }
+}
 
+function goHome() {
+    document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
+    const homeNav = document.querySelector(".nav-item");
+    if (homeNav) homeNav.classList.add("active");
+    document.querySelectorAll("body > .hero, body > .section").forEach(el => el.style.display = "");
+    const pageView = document.getElementById("pageView");
+    if (pageView) pageView.style.display = "none";
+    changePageTitle("Elvish Army");
+    window.scrollTo({top:0, behavior:"smooth"});
+    loadUpdates();
+}
+
+function changePageTitle(title) {
+    const titleElement = document.getElementById("pageTitle");
+    if (titleElement) titleElement.innerText = title;
 }
 
 // ==================================================
@@ -2215,6 +1978,8 @@ async function createCommunityPost() {
 
         let mediaType = "";
 
+        localStorage.setItem("elvish_username", username);
+
 
         // =====================================
         // UPLOAD MEDIA
@@ -2282,8 +2047,7 @@ async function createCommunityPost() {
                     body: JSON.stringify({
 
                         user_id:
-                            "user_" +
-                            Date.now(),
+                            getCommunityUserId(),
 
                         username:
                             username,
@@ -3039,7 +2803,7 @@ function showProfile() {
 
     const container =
         document.getElementById(
-            "updatesContainer"
+            "pageContainer"
         );
 
     container.innerHTML = `
@@ -3073,7 +2837,7 @@ function showQuiz() {
 
     const container =
         document.getElementById(
-            "updatesContainer"
+            "pageContainer"
         );
 
     container.innerHTML = `
@@ -3838,8 +3602,6 @@ async function startApp() {
     await loadNews();
 
     await loadVideos();
-
-    await loadPhotos();
 
     await loadNotifications();
 
