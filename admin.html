@@ -1,1523 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Elvish Army Admin</title>
-
 <style>
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-}
-
-body {
-    background: #080808;
-    color: white;
-    padding: 20px;
-}
-
-.container {
-    max-width: 800px;
-    margin: auto;
-}
-
-.header {
-    background: #111;
-    padding: 20px;
-    border-radius: 18px;
-    border: 1px solid #292929;
-    margin-bottom: 20px;
-}
-
-.header span {
-    color: #f5b400;
-}
-
-.card {
-    background: #111;
-    border: 1px solid #292929;
-    border-radius: 18px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
-
-input,
-textarea {
-    width: 100%;
-    background: #191919;
-    color: white;
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 13px;
-    margin-bottom: 12px;
-}
-
-textarea {
-    min-height: 100px;
-}
-
-button {
-    border: none;
-    border-radius: 10px;
-    padding: 11px 16px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.primary {
-    background: #f5b400;
-    color: #000;
-    width: 100%;
-}
-
-.delete {
-    background: #2a1717;
-    color: #ff7070;
-    margin-top: 10px;
-}
-
-.edit {
-    background: #222;
-    color: #f5b400;
-    margin-top: 10px;
-    margin-right: 5px;
-}
-
-.item {
-    background: #181818;
-    border: 1px solid #292929;
-    border-radius: 14px;
-    padding: 15px;
-    margin-top: 12px;
-}
-
-.item h3 {
-    margin-bottom: 7px;
-}
-
-.item p {
-    color: #bbb;
-    margin-top: 8px;
-    line-height: 1.5;
-}
-
-.tabs {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 20px;
-}
-
-.tab {
-    background: #181818;
-    color: #aaa;
-    padding: 12px 5px;
-    border-radius: 10px;
-    text-align: center;
-    cursor: pointer;
-}
-
-.tab.active {
-    background: #f5b400;
-    color: #000;
-}
-
-.hidden {
-    display: none;
-}
-
-#login {
-    max-width: 420px;
-    margin: 60px auto;
-}
-
-.message {
-    color: #f5b400;
-    margin-top: 10px;
-}
-
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+body{background:#070707;color:#fff;padding:16px}
+.container{max-width:1100px;margin:auto}.hidden{display:none!important}
+.card,.header{background:#111;border:1px solid #292929;border-radius:18px;padding:18px;margin-bottom:16px}
+.header{position:sticky;top:10px;z-index:10;background:rgba(17,17,17,.96);backdrop-filter:blur(10px)}
+.brand span,.accent{color:#f5b400}.muted{color:#888}.message{margin-top:10px;color:#f5b400;min-height:18px}
+input,textarea,select{width:100%;background:#191919;color:#fff;border:1px solid #333;border-radius:12px;padding:13px;margin:7px 0;outline:none}
+input:focus,textarea:focus{border-color:#f5b400}textarea{min-height:100px;resize:vertical}
+button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:700}
+.primary{background:#f5b400;color:#000}.danger{background:#2a1717;color:#ff7777}.secondary{background:#222;color:#f5b400}.ghost{background:#1b1b1b;color:#ddd}
+button:disabled{opacity:.5;cursor:not-allowed}.login{max-width:430px;margin:55px auto}.login h1{margin-bottom:6px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;position:sticky;top:115px;z-index:9}
+.tab{background:#181818;border:1px solid #292929;color:#aaa;padding:12px 6px;border-radius:11px;text-align:center;cursor:pointer}.tab.active{background:#f5b400;color:#000;border-color:#f5b400}
+.panel{display:none}.panel.active{display:block}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-grid>*{min-width:0}
+.item{background:#181818;border:1px solid #292929;border-radius:14px;padding:14px;margin-top:11px}.item h3{margin-bottom:6px}.item p{color:#bbb;line-height:1.5;white-space:pre-wrap;word-break:break-word}.item small{color:#777}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#181818;border:1px solid #292929;border-radius:14px;padding:15px}.stat b{display:block;font-size:25px;margin-top:5px;color:#f5b400}
+.media{width:100%;max-height:360px;object-fit:cover;border-radius:12px;margin-top:10px;background:#000}.url{color:#aaa;font-size:12px;word-break:break-all;margin-top:7px}
+.comment{background:#101010;border:1px solid #292929;border-radius:12px;padding:10px;margin-top:8px}.reply{margin-left:25px;background:#171717}.comment b{color:#f5b400}.pill{display:inline-block;padding:5px 8px;border-radius:99px;background:#252525;color:#bbb;font-size:12px;margin:3px}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.top-actions button{margin-left:auto}.loading{color:#777;text-align:center;padding:20px}.error{color:#ff7777;padding:10px 0}.toast{position:fixed;right:16px;bottom:16px;background:#f5b400;color:#000;padding:12px 16px;border-radius:12px;font-weight:700;display:none;z-index:99}
+@media(max-width:700px){body{padding:9px}.form-grid,.stats{grid-template-columns:1fr}.tabs{grid-template-columns:repeat(2,1fr);top:8px}.header{position:relative;top:0}.tabs{position:relative;top:0}.actions button{flex:1}.stat b{font-size:22px}}
 </style>
-
 </head>
-
-
 <body>
-
-
-<!-- LOGIN -->
-
-<div id="login">
-
-<div class="card">
-
-<h1>👑 ELVISH <span style="color:#f5b400">ARMY</span></h1>
-
-<p style="color:#777;margin:10px 0 20px;">
-Admin Login
-</p>
-
-<input
-id="username"
-placeholder="Username"
->
-
-<input
-id="password"
-type="password"
-placeholder="Password"
->
-
-<button
-class="primary"
-onclick="login()"
->
-LOGIN 🔐
-</button>
-
-<p id="loginMessage"
-class="message">
-</p>
-
+<div id="login" class="login">
+  <div class="card">
+    <h1>👑 ELVISH <span class="brand"><span>ARMY</span></span></h1>
+    <p class="muted" style="margin:7px 0 18px">Admin Control Panel</p>
+    <input id="username" placeholder="Username" autocomplete="username">
+    <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+    <button class="primary" style="width:100%;margin-top:5px" onclick="login()">LOGIN 🔐</button>
+    <p id="loginMessage" class="message"></p>
+  </div>
 </div>
 
-</div>
-
-
-<!-- ADMIN -->
-
-<div
-id="admin"
-class="container hidden"
->
-
-<div class="header">
-
-<h1>
-👑 ELVISH <span>ARMY</span>
-</h1>
-
-<p style="color:#777;margin-top:7px;">
-Admin Control Panel
-</p>
-
-<button
-class="delete"
-onclick="logout()"
->
-Logout
-</button>
-
-</div>
-
-
-<!-- TABS -->
-
-<div class="tabs">
-
-<div
-class="tab active"
-onclick="showTab('news',this)"
->
-📰 News
-</div>
-
-<div
-class="tab"
-onclick="showTab('videos',this)"
->
-🎬 Videos
-</div>
-
-<div
-class="tab"
-onclick="showTab('photos',this)"
->
-📸 Photos
-</div>
-
-<div
-class="tab"
-onclick="showTab('updates',this)"
->
-🔥 Updates
-</div>
-
-<div class="tab" onclick="showTab('polls',this)">
-    🗳️ Polls
-</div>
-
-<div class="tab" onclick="showTab('community',this)">
-    👥 Community
-</div>
-
-<div class="tab" onclick="showTab('notifications',this)">
-    🔔 Notifications
-</div>
-
-<div class="tab" onclick="showTab('dashboard',this)">
-    📊 Dashboard
-</div>
-
-</div>
-
-
-<!-- NEWS -->
-
-<div id="news" class="card">
-
-<h2>📰 News</h2>
-
-<br>
-
-<input
-id="newsTitle"
-placeholder="News title"
->
-
-<textarea
-id="newsDescription"
-placeholder="News description"
-></textarea>
-
-<button
-class="primary"
-onclick="addNews()"
->
-ADD NEWS
-</button>
-
-<div id="newsList"></div>
-
-</div>
-
-
-<!-- VIDEOS -->
-
-<div id="videos" class="card hidden">
-
-<h2>🎬 Videos</h2>
-
-<br>
-
-<input
-id="videoTitle"
-placeholder="Video title"
->
-
-<input
-id="videoUrl"
-placeholder="YouTube / Video URL"
->
-
-<input
-id="videoThumbnail"
-placeholder="Thumbnail URL (optional)"
->
-
-<button
-class="primary"
-onclick="addVideo()"
->
-ADD VIDEO
-</button>
-
-<div id="videoList"></div>
-
-</div>
-
-
-<!-- PHOTOS -->
-
-<div id="photos" class="card hidden">
-
-<h2>📸 Photos</h2>
-
-<br>
-
-<input
-id="photoTitle"
-placeholder="Photo title"
->
-
-<input
-id="photoUrl"
-placeholder="Image URL"
->
-
-<button
-class="primary"
-onclick="addPhoto()"
->
-ADD PHOTO
-</button>
-
-<div id="photoList"></div>
-
-</div>
-
-
-<!-- POLLS -->
-
-<div id="polls" class="card hidden">
-
-    <h2>🗳️ Create Poll</h2>
-
-    <br>
-
-    <input id="pollQuestion"
-           placeholder="Poll question">
-
-    <input id="pollOption1"
-           placeholder="Option 1">
-
-    <input id="pollOption2"
-           placeholder="Option 2">
-
-    <button class="primary"
-            onclick="createPoll()">
-        CREATE POLL
-    </button>
-
-    <div id="pollList"></div>
-
-</div>
-
-
-<!-- COMMUNITY -->
-
-<div id="community" class="card hidden">
-
-    <h2>👥 Community Posts</h2>
-
-    <br>
-
-    <input id="communityUsername"
-           placeholder="Username">
-
-    <textarea id="communityContent"
-              placeholder="Post content"></textarea>
-
-    <button class="primary"
-            onclick="createPost()">
-        CREATE POST
-    </button>
-
-    <div id="communityList"></div>
-
-</div>
-
-
-<!-- NOTIFICATIONS -->
-
-<div id="notifications" class="card hidden">
-
-    <h2>🔔 Send Notification</h2>
-
-    <br>
-
-    <input id="notificationTitle"
-           placeholder="Notification title">
-
-    <textarea id="notificationMessage"
-              placeholder="Notification message"></textarea>
-
-    <button class="primary"
-            onclick="sendNotification()">
-        SEND NOTIFICATION 🔔
-    </button>
-
-    <div id="notificationList"></div>
-
-</div>
-
-
-<!-- DASHBOARD -->
-
-<div id="dashboard" class="card hidden">
-
-    <h2>📊 Dashboard</h2>
-
-    <br>
-
-    <div id="dashboardStats">
-        Loading statistics...
+<div id="admin" class="container hidden">
+  <div class="header">
+    <h1>👑 ELVISH <span class="brand">ARMY</span></h1>
+    <p class="muted" style="margin-top:5px">Admin Control Panel • Live Backend Connected</p>
+    <div class="top-actions">
+      <span class="pill">🟢 API Connected</span>
+      <button class="danger" onclick="logout()">Logout</button>
     </div>
+  </div>
 
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('dashboard',this)">📊 Dashboard</div>
+    <div class="tab" onclick="showTab('news',this)">📰 News</div>
+    <div class="tab" onclick="showTab('videos',this)">🎬 Videos</div>
+    <div class="tab" onclick="showTab('updates',this)">🔥 Updates</div>
+    <div class="tab" onclick="showTab('polls',this)">🗳️ Polls</div>
+    <div class="tab" onclick="showTab('community',this)">👥 Community</div>
+    <div class="tab" onclick="showTab('notifications',this)">🔔 Notifications</div>
+    <div class="tab" onclick="showTab('photos',this)">📸 Photos</div>
+  </div>
+
+  <section id="dashboard" class="card panel active">
+    <h2>📊 Dashboard</h2><p class="muted" style="margin-top:5px">Live database overview</p>
+    <div id="dashboardStats" class="stats" style="margin-top:15px"><div class="loading">Loading...</div></div>
+    <div class="actions"><button class="secondary" onclick="loadDashboard()">🔄 Refresh Stats</button></div>
+  </section>
+
+  <section id="news" class="card panel">
+    <h2>📰 News</h2>
+    <input id="newsTitle" placeholder="News title">
+    <textarea id="newsDescription2" placeholder="Detailed news description"></textarea>
+    <button class="primary" onclick="addNews()">ADD NEWS</button>
+    <div id="newsList"></div>
+  </section>
+
+  <section id="videos" class="card panel">
+    <h2>🎬 Videos / Reels</h2>
+    <input id="videoTitle" placeholder="Video title">
+    <input id="videoUrl" placeholder="YouTube / Shorts / direct video URL">
+    <input id="videoThumbnail" placeholder="Thumbnail URL (optional)">
+    <button class="primary" onclick="addVideo()">ADD VIDEO</button>
+    <div id="videoList"></div>
+  </section>
+
+  <section id="updates" class="card panel">
+    <h2>🔥 Updates</h2>
+    <input id="updateTitle" placeholder="Update title">
+    <textarea id="updateDescription" placeholder="Write update..."></textarea>
+    <button class="primary" onclick="addUpdate()">PUBLISH UPDATE</button>
+    <div id="updateList"></div>
+  </section>
+
+  <section id="polls" class="card panel">
+    <h2>🗳️ Polls</h2>
+    <input id="pollQuestion" placeholder="Poll question">
+    <div class="form-grid"><input id="pollOption1" placeholder="Option 1"><input id="pollOption2" placeholder="Option 2"></div>
+    <button class="primary" onclick="createPoll()">CREATE POLL</button>
+    <div id="pollList"></div>
+  </section>
+
+  <section id="community" class="card panel">
+    <h2>👥 Community</h2>
+    <p class="muted" style="margin:5px 0 10px">Admin yahan posts, media, likes/comments aur replies dekh sakta hai.</p>
+    <div class="form-grid"><input id="communityUsername" placeholder="Admin post username"><input id="communityUserId" placeholder="User ID" value="admin"></div>
+    <textarea id="communityContent" placeholder="Create community post..."></textarea>
+    <button class="primary" onclick="createPost()">CREATE POST</button>
+    <div id="communityList"></div>
+  </section>
+
+  <section id="notifications" class="card panel">
+    <h2>🔔 Notifications</h2>
+    <input id="notificationTitle" placeholder="Notification title">
+    <textarea id="notificationMessage" placeholder="Notification message"></textarea>
+    <button class="primary" onclick="sendNotification()">SEND NOTIFICATION 🔔</button>
+    <div id="notificationList"></div>
+  </section>
+
+  <section id="photos" class="card panel">
+    <h2>📸 Photos</h2>
+    <p class="muted" style="margin:5px 0 10px">Legacy photo manager. Existing photo records remain visible here.</p>
+    <input id="photoTitle" placeholder="Photo title">
+    <input id="photoUrl" placeholder="Image URL">
+    <button class="primary" onclick="addPhoto()">ADD PHOTO</button>
+    <div id="photoList"></div>
+  </section>
 </div>
-
-
-<!-- UPDATES -->
-
-<div id="updates" class="card hidden">
-
-<h2>🔥 Updates</h2>
-
-<br>
-
-<input
-id="updateTitle"
-placeholder="Update title"
->
-
-<textarea
-id="updateDescription"
-placeholder="Write update..."
-></textarea>
-
-<button
-class="primary"
-onclick="addUpdate()"
->
-PUBLISH UPDATE
-</button>
-
-<div id="updateList"></div>
-
-</div>
-
-
-</div>
-
+<div id="toast" class="toast"></div>
 
 <script>
+const API="https://elvish-army-api.onrender.com";
+let token=localStorage.getItem("adminToken")||"";
 
-const API = "https://elvish-army-api.onrender.com";
-
-let token = localStorage.getItem("adminToken");
-
-
-/* =========================
-LOGIN
-========================= */
-
-async function login() {
-
-    const username =
-        document.getElementById("username").value;
-
-    const password =
-        document.getElementById("password").value;
-
-    const message =
-        document.getElementById("loginMessage");
-
-    try {
-
-        const response = await fetch(
-            `${API}/api/admin/login`,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify({
-                    username,
-                    password
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.detail);
-        }
-
-        token = data.token;
-
-        localStorage.setItem(
-            "adminToken",
-            token
-        );
-
-        showAdmin();
-
-    } catch (error) {
-
-        message.innerText =
-            error.message || "Login failed";
-
-    }
-
+function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2200)}
+function headers(){return {"Content-Type":"application/json","Authorization":"Bearer "+token};}
+async function api(path,opts={}){
+  opts.headers={...(opts.headers||{}),Authorization:"Bearer "+token};
+  const r=await fetch(API+path,opts);
+  let d={};try{d=await r.json()}catch(e){}
+  if(r.status===401){localStorage.removeItem('adminToken');token='';document.getElementById('admin').classList.add('hidden');document.getElementById('login').classList.remove('hidden');throw new Error('Admin login expired. Please login again.');}
+  if(!r.ok) throw new Error(d.detail||d.message||'Request failed');
+  return d;
 }
-
-// =====================================================
-// POLLS
-// =====================================================
-
-async function createPoll() {
-
-    const question =
-        document.getElementById("pollQuestion").value;
-
-    const option1 =
-        document.getElementById("pollOption1").value;
-
-    const option2 =
-        document.getElementById("pollOption2").value;
-
-    if (!question || !option1 || !option2) {
-        alert("Poll details bhar bhai.");
-        return;
-    }
-
-    await fetch(`${API}/api/polls`, {
-
-        method: "POST",
-
-        headers: headers(),
-
-        body: JSON.stringify({
-            question,
-            option1,
-            option2
-        })
-
-    });
-
-    document.getElementById("pollQuestion").value = "";
-    document.getElementById("pollOption1").value = "";
-    document.getElementById("pollOption2").value = "";
-
-    loadPolls();
-}
-
-
-async function loadPolls() {
-
-    const response =
-        await fetch(`${API}/api/polls`);
-
-    const data =
-        await response.json();
-
-    const list =
-        document.getElementById("pollList");
-
-    list.innerHTML = "";
-
-    data.polls.forEach(poll => {
-
-        list.innerHTML += `
-
-            <div class="item">
-
-                <h3>${poll.question}</h3>
-
-                <p>
-                    ${poll.option1}:
-                    ${poll.votes1} votes
-                </p>
-
-                <p>
-                    ${poll.option2}:
-                    ${poll.votes2} votes
-                </p>
-
-                <button
-                    class="delete"
-                    onclick="deletePoll(${poll.id})">
-                    🗑️ Delete
-                </button>
-
-            </div>
-
-        `;
-
-    });
-}
-
-
-async function deletePoll(id) {
-
-    if (!confirm("Delete this poll?")) return;
-
-    await fetch(`${API}/api/polls/${id}`, {
-
-        method: "DELETE",
-
-        headers: headers()
-
-    });
-
-    loadPolls();
-}
-
-
-// =====================================================
-// COMMUNITY
-// =====================================================
-
-async function createPost() {
-
-    const username =
-        document.getElementById(
-            "communityUsername"
-        ).value;
-
-    const content =
-        document.getElementById(
-            "communityContent"
-        ).value;
-
-    if (!username || !content) {
-        alert("Post details bhar bhai.");
-        return;
-    }
-
-    await fetch(`${API}/api/community`, {
-
-        method: "POST",
-
-        headers: headers(),
-
-        body: JSON.stringify({
-            username,
-            content
-        })
-
-    });
-
-    document.getElementById(
-        "communityUsername"
-    ).value = "";
-
-    document.getElementById(
-        "communityContent"
-    ).value = "";
-
-    loadCommunity();
-}
-
-
-async function loadCommunity() {
-
-    const response =
-        await fetch(`${API}/api/community`);
-
-    const data =
-        await response.json();
-
-    const list =
-        document.getElementById(
-            "communityList"
-        );
-
-    list.innerHTML = "";
-
-    data.posts.forEach(post => {
-
-        list.innerHTML += `
-
-            <div class="item">
-
-                <h3>
-                    👤 ${post.username}
-                </h3>
-
-                <p>
-                    ${post.content}
-                </p>
-
-                <button
-                    class="delete"
-                    onclick="deleteCommunity(${post.id})">
-                    🗑️ Delete
-                </button>
-
-            </div>
-
-        `;
-
-    });
-}
-
-
-async function deleteCommunity(id) {
-
-    if (!confirm("Delete this post?")) return;
-
-    await fetch(
-        `${API}/api/community/${id}`,
-        {
-            method: "DELETE",
-            headers: headers()
-        }
-    );
-
-    loadCommunity();
-}
-
-
-// =====================================================
-// NOTIFICATIONS
-// =====================================================
-
-async function sendNotification() {
-
-    const title =
-        document.getElementById(
-            "notificationTitle"
-        ).value;
-
-    const message =
-        document.getElementById(
-            "notificationMessage"
-        ).value;
-
-    if (!title || !message) {
-        alert("Notification details bhar bhai.");
-        return;
-    }
-
-    await fetch(
-        `${API}/api/notifications`,
-        {
-            method: "POST",
-
-            headers: headers(),
-
-            body: JSON.stringify({
-                title,
-                message
-            })
-        }
-    );
-
-    document.getElementById(
-        "notificationTitle"
-    ).value = "";
-
-    document.getElementById(
-        "notificationMessage"
-    ).value = "";
-
-    loadNotifications();
-}
-
-
-async function loadNotifications() {
-
-    try {
-
-        const response = await fetch(
-            `${API}/api/notifications`
-        );
-
-        if (response.status === 401) {
-            console.log("Notification admin auth required");
-            return;
-        }
-
-        const data = await response.json();
-
-        const list =
-            document.getElementById("notificationList");
-
-        list.innerHTML = "";
-
-        data.notifications.forEach(item => {
-
-            list.innerHTML += `
-
-                <div class="item">
-
-                    <h3>🔔 ${item.title}</h3>
-
-                    <p>${item.message}</p>
-
-                    <small>
-                        ${item.created_at}
-                    </small>
-
-                    <br>
-
-                    <button
-                        class="delete"
-                        onclick="deleteNotification(${item.id})">
-                        🗑️ Delete
-                    </button>
-
-                </div>
-
-            `;
-
-        });
-
-    } catch (error) {
-
-        console.error(
-            "Notifications error:",
-            error
-        );
-
-    }
-
-}
-
-async function deleteNotification(id) {
-
-    if (!confirm("Delete notification?")) return;
-
-    await fetch(
-        `${API}/api/notifications/${id}`,
-        {
-            method: "DELETE",
-            headers: headers()
-        }
-    );
-
-    loadNotifications();
-}
-
-
-// =====================================================
-// DASHBOARD
-// =====================================================
-
-async function loadDashboard() {
-
-    try {
-
-        const response = await fetch(
-            `${API}/api/admin/dashboard`,
-            {
-                headers: headers()
-            }
-        );
-
-        if (response.status === 401) {
-
-            localStorage.removeItem("adminToken");
-
-            alert("Admin login expired. Please login again.");
-
-            location.reload();
-
-            return;
-        }
-
-        const data = await response.json();
-
-        if (!data.stats) {
-
-            console.error(
-                "Dashboard response:",
-                data
-            );
-
-            return;
-        }
-
-        const s = data.stats;
-
-        document.getElementById(
-            "dashboardStats"
-        ).innerHTML = `
-
-            <div class="item">
-                👤 Users:
-                <strong>${s.users}</strong>
-            </div>
-
-            <div class="item">
-                👁️ Views:
-                <strong>${s.views}</strong>
-            </div>
-
-            <div class="item">
-                🔥 Updates:
-                <strong>${s.updates}</strong>
-            </div>
-
-            <div class="item">
-                📰 News:
-                <strong>${s.news}</strong>
-            </div>
-
-            <div class="item">
-                🎬 Videos:
-                <strong>${s.videos}</strong>
-            </div>
-
-            <div class="item">
-                📸 Photos:
-                <strong>${s.photos}</strong>
-            </div>
-
-            <div class="item">
-                🗳️ Polls:
-                <strong>${s.polls}</strong>
-            </div>
-
-            <div class="item">
-                👥 Community:
-                <strong>${s.community_posts}</strong>
-            </div>
-
-            <div class="item">
-                🔔 Notifications:
-                <strong>${s.notifications}</strong>
-            </div>
-
-        `;
-
-    } catch (error) {
-
-        console.error(
-            "Dashboard error:",
-            error
-        );
-
-    }
-
-}
-
-
-/* =========================
-AUTH HEADERS
-========================= */
-
-function headers() {
-
-    return {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-    };
-
-}
-
-
-/* =========================
-SHOW ADMIN
-========================= */
-
-function showAdmin() {
-
-    document
-        .getElementById("login")
-        .classList.add("hidden");
-
-    document
-        .getElementById("admin")
-        .classList.remove("hidden");
-
-    loadNews();
-    loadVideos();
-    loadPhotos();
-    loadUpdates();
-    loadPolls();
-    loadCommunity();
-    loadNotifications();
-    loadDashboard();
-
-}
-
-
-/* =========================
-TABS
-========================= */
-
-function showTab(id, element) {
-
-    document
-        .querySelectorAll(".card")
-        .forEach(card => {
-
-            if (
-                ["news","videos","photos","updates"]
-                .includes(card.id)
-            ) {
-                card.classList.add("hidden");
-            }
-
-        });
-
-    document
-        .getElementById(id)
-        .classList.remove("hidden");
-
-    document
-        .querySelectorAll(".tab")
-        .forEach(tab =>
-            tab.classList.remove("active")
-        );
-
-    element.classList.add("active");
-
-}
-
-
-/* =========================
-NEWS
-========================= */
-
-async function addNews() {
-
-    const title =
-        document.getElementById("newsTitle").value;
-
-    const description =
-        document.getElementById("newsDescription").value;
-
-    if (!title || !description) {
-        alert("News details bhar bhai.");
-        return;
-    }
-
-    await fetch(`${API}/api/news`, {
-
-        method: "POST",
-
-        headers: headers(),
-
-        body: JSON.stringify({
-            title,
-            description
-        })
-
-    });
-
-    document.getElementById("newsTitle").value = "";
-    document.getElementById("newsDescription").value = "";
-
-    loadNews();
-
-}
-
-
-async function loadNews() {
-
-    const response =
-        await fetch(`${API}/api/news`);
-
-    const data =
-        await response.json();
-
-    const list =
-        document.getElementById("newsList");
-
-    list.innerHTML = "";
-
-    data.news.forEach(item => {
-
-        list.innerHTML += `
-
-        <div class="item">
-
-            <h3>${item.title}</h3>
-
-            <small>${item.date}</small>
-
-            <p>${item.description}</p>
-
-            <button
-                class="edit"
-                onclick="editNews(${item.id})"
-            >
-                ✏️ Edit
-            </button>
-
-            <button
-                class="delete"
-                onclick="deleteNews(${item.id})"
-            >
-                🗑️ Delete
-            </button>
-
-        </div>
-
-        `;
-
-    });
-
-}
-
-
-async function editNews(id) {
-
-    const title =
-        prompt("New title:");
-
-    if (!title) return;
-
-    const description =
-        prompt("New description:");
-
-    if (!description) return;
-
-    await fetch(`${API}/api/news/${id}`, {
-
-        method: "PUT",
-
-        headers: headers(),
-
-        body: JSON.stringify({
-            title,
-            description
-        })
-
-    });
-
-    loadNews();
-
-}
-
-
-async function deleteNews(id) {
-
-    if (!confirm("Delete this news?")) return;
-
-    await fetch(`${API}/api/news/${id}`, {
-
-        method: "DELETE",
-
-        headers: headers()
-
-    });
-
-    loadNews();
-
-}
-
-
-/* =========================
-VIDEOS
-========================= */
-
-async function addVideo() {
-
-    const title =
-        document.getElementById("videoTitle").value;
-
-    const url =
-        document.getElementById("videoUrl").value;
-
-    const thumbnail =
-        document.getElementById("videoThumbnail").value;
-
-    if (!title || !url) {
-        alert("Video details bhar bhai.");
-        return;
-    }
-
-    await fetch(`${API}/api/videos`, {
-
-        method: "POST",
-
-        headers: headers(),
-
-        body: JSON.stringify({
-            title,
-            url,
-            thumbnail
-        })
-
-    });
-
-    document.getElementById("videoTitle").value = "";
-    document.getElementById("videoUrl").value = "";
-    document.getElementById("videoThumbnail").value = "";
-
-    loadVideos();
-
-}
-
-
-async function loadVideos() {
-
-    const response =
-        await fetch(`${API}/api/videos`);
-
-    const data =
-        await response.json();
-
-    const list =
-        document.getElementById("videoList");
-
-    list.innerHTML = "";
-
-    data.videos.forEach(item => {
-
-        list.innerHTML += `
-
-        <div class="item">
-
-            <h3>${item.title}</h3>
-
-            <p>${item.url}</p>
-
-            <button
-                class="delete"
-                onclick="deleteVideo(${item.id})"
-            >
-                🗑️ Delete
-            </button>
-
-        </div>
-
-        `;
-
-    });
-
-}
-
-
-async function deleteVideo(id) {
-
-    if (!confirm("Delete this video?")) return;
-
-    await fetch(`${API}/api/videos/${id}`, {
-
-        method: "DELETE",
-
-        headers: headers()
-
-    });
-
-    loadVideos();
-
-}
-
-
-/* =========================
-PHOTOS
-========================= */
-
-async function addPhoto() {
-
-    const title =
-        document.getElementById("photoTitle").value;
-
-    const image_url =
-        document.getElementById("photoUrl").value;
-
-    if (!title || !image_url) {
-        alert("Photo details bhar bhai.");
-        return;
-    }
-
-    await fetch(`${API}/api/photos`, {
-
-        method: "POST",
-
-        headers: headers(),
-
-        body: JSON.stringify({
-            title,
-            image_url
-        })
-
-    });
-
-    document.getElementById("photoTitle").value = "";
-    document.getElementById("photoUrl").value = "";
-
-    loadPhotos();
-
-}
-
-
-async function loadPhotos() {
-
-    const response =
-        await fetch(`${API}/api/photos`);
-
-    const data =
-        await response.json();
-
-    const list =
-        document.getElementById("photoList");
-
-    list.innerHTML = "";
-
-    data.photos.forEach(item => {
-
-        list.innerHTML += `
-
-        <div class="item">
-
-            <h3>${item.title}</h3>
-
-            <img
-                src="${item.image_url}"
-                style="
-                    width:100%;
-                    border-radius:12px;
-                    margin-top:10px;
-                "
-            >
-
-            <button
-                class="delete"
-                onclick="deletePhoto(${item.id})"
-            >
-                🗑️ Delete
-            </button>
-
-        </div>
-
-        `;
-
-    });
-
-}
-
-
-async function deletePhoto(id) {
-
-    if (!confirm("Delete this photo?")) return;
-
-    await fetch(`${API}/api/photos/${id}`, {
-
-        method: "DELETE",
-
-        headers: headers()
-
-    });
-
-    loadPhotos();
-
-}
-
-
-/* =========================
-UPDATES
-========================= */
-
-async function addUpdate() {
-
-    const title =
-        document.getElementById("updateTitle").value;
-
-    const description =
-        document.getElementById("updateDescription").value;
-
-    if (!title || !description) {
-        alert("Update details bhar bhai.");
-        return;
-    }
-
-    await fetch(`${API}/api/updates`, {
-
-        method: "POST",
-
-        headers: headers(),
-
-        body: JSON.stringify({
-            title,
-            description
-        })
-
-    });
-
-    document.getElementById("updateTitle").value = "";
-    document.getElementById("updateDescription").value = "";
-
-    loadUpdates();
-
-}
-
-
-async function loadUpdates() {
-
-    const response =
-        await fetch(`${API}/api/updates`);
-
-    const data =
-        await response.json();
-
-    const list =
-        document.getElementById("updateList");
-
-    list.innerHTML = "";
-
-    data.updates.forEach(item => {
-
-        list.innerHTML += `
-
-        <div class="item">
-
-            <h3>${item.title}</h3>
-
-            <small>${item.time}</small>
-
-            <p>${item.description}</p>
-
-            <button
-                class="delete"
-                onclick="deleteUpdate(${item.id})"
-            >
-                🗑️ Delete
-            </button>
-
-        </div>
-
-        `;
-
-    });
-
-}
-
-
-async function deleteUpdate(id) {
-
-    if (!confirm("Delete this update?")) return;
-
-    await fetch(`${API}/api/updates/${id}`, {
-
-        method: "DELETE",
-
-        headers: headers()
-
-    });
-
-    loadUpdates();
-
-}
-
-
-/* =========================
-LOGOUT
-========================= */
-
-async function logout() {
-
-    await fetch(`${API}/api/admin/logout`, {
-
-        method: "POST",
-
-        headers: headers()
-
-    });
-
-    localStorage.removeItem("adminToken");
-
-    location.reload();
-
-}
-
-
-/* =========================
-START
-========================= */
-
-if (token) {
-    showAdmin();
-}
-
+async function login(){
+  const username=document.getElementById('username').value.trim(),password=document.getElementById('password').value;
+  const msg=document.getElementById('loginMessage');msg.textContent='';
+  if(!username||!password){msg.textContent='Username aur password bharo.';return}
+  try{const r=await fetch(API+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Login failed');token=d.token;localStorage.setItem('adminToken',token);showAdmin();toast('Admin login successful 🔥')}catch(e){msg.textContent=e.message}}
+function showAdmin(){document.getElementById('login').classList.add('hidden');document.getElementById('admin').classList.remove('hidden');loadAll()}
+function showTab(id,el){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');if(id==='dashboard')loadDashboard()}
+async function loadAll(){await Promise.allSettled([loadDashboard(),loadNews(),loadVideos(),loadUpdates(),loadPolls(),loadCommunity(),loadNotifications(),loadPhotos()])}
+function fail(id,e){document.getElementById(id).innerHTML='<div class="error">'+esc(e.message)+'</div>'}
+
+async function loadDashboard(){try{const d=await api('/api/admin/dashboard'),s=d.stats||{};const labels=[['👤','Users',s.users],['👁️','Views',s.views],['🔥','Updates',s.updates],['📰','News',s.news],['🎬','Videos',s.videos],['📸','Photos',s.photos],['🗳️','Polls',s.polls],['👥','Community',s.community_posts],['🔔','Notifications',s.notifications]];document.getElementById('dashboardStats').innerHTML=labels.map(x=>`<div class="stat">${x[0]} ${x[1]}<b>${x[2]??0}</b></div>`).join('')}catch(e){fail('dashboardStats',e)}}
+
+async function addNews(){const title=document.getElementById('newsTitle').value.trim(),description=document.getElementById('newsDescription2').value.trim();if(!title||!description)return alert('News details bhar bhai.');try{await api('/api/news',{method:'POST',headers:headers(),body:JSON.stringify({title,description})});document.getElementById('newsTitle').value='';document.getElementById('newsDescription2').value='';toast('News added 📰');loadNews();loadDashboard()}catch(e){alert(e.message)}}
+async function loadNews(){try{const d=await api('/api/news');document.getElementById('newsList').innerHTML=(d.news||[]).map(x=>`<div class="item"><h3>${esc(x.title)}</h3><small>${esc(x.date)}</small><p>${esc(x.description)}</p><div class="actions"><button class="secondary" onclick="editNews(${x.id})">✏️ Edit</button><button class="danger" onclick="deleteNews(${x.id})">🗑️ Delete</button></div></div>`).join('')||'<div class="loading">No news yet.</div>'}catch(e){fail('newsList',e)}}
+async function editNews(id){const title=prompt('New title:');if(title===null)return;const description=prompt('New description:');if(description===null)return;try{await api('/api/news/'+id,{method:'PUT',headers:headers(),body:JSON.stringify({title,description})});toast('News updated');loadNews()}catch(e){alert(e.message)}}
+async function deleteNews(id){if(!confirm('Delete this news?'))return;try{await api('/api/news/'+id,{method:'DELETE'});toast('News deleted');loadNews();loadDashboard()}catch(e){alert(e.message)}}
+
+async function addVideo(){const title=document.getElementById('videoTitle').value.trim(),url=document.getElementById('videoUrl').value.trim(),thumbnail=document.getElementById('videoThumbnail').value.trim();if(!title||!url)return alert('Video details bhar bhai.');try{await api('/api/videos',{method:'POST',headers:headers(),body:JSON.stringify({title,url,thumbnail})});['videoTitle','videoUrl','videoThumbnail'].forEach(id=>document.getElementById(id).value='');toast('Video added 🎬');loadVideos();loadDashboard()}catch(e){alert(e.message)}}
+function videoPreview(x){if(x.thumbnail)return `<img class="media" src="${esc(x.thumbnail)}" onerror="this.style.display='none'">`;if(/\.(mp4|webm|mov)(\?|$)/i.test(x.url))return `<video class="media" src="${esc(x.url)}" controls playsinline></video>`;return ''}
+async function loadVideos(){try{const d=await api('/api/videos');document.getElementById('videoList').innerHTML=(d.videos||[]).map(x=>`<div class="item"><h3>${esc(x.title)}</h3>${videoPreview(x)}<div class="url">${esc(x.url)}</div><div class="actions"><button class="danger" onclick="deleteVideo(${x.id})">🗑️ Delete</button></div></div>`).join('')||'<div class="loading">No videos yet.</div>'}catch(e){fail('videoList',e)}}
+async function deleteVideo(id){if(!confirm('Delete this video?'))return;try{await api('/api/videos/'+id,{method:'DELETE'});toast('Video deleted');loadVideos();loadDashboard()}catch(e){alert(e.message)}}
+
+async function addUpdate(){const title=document.getElementById('updateTitle').value.trim(),description=document.getElementById('updateDescription').value.trim();if(!title||!description)return alert('Update details bhar bhai.');try{await api('/api/updates',{method:'POST',headers:headers(),body:JSON.stringify({title,description})});document.getElementById('updateTitle').value='';document.getElementById('updateDescription').value='';toast('Update published 🔥');loadUpdates();loadDashboard()}catch(e){alert(e.message)}}
+async function loadUpdates(){try{const d=await api('/api/updates');document.getElementById('updateList').innerHTML=(d.updates||[]).map(x=>`<div class="item"><h3>${esc(x.title)}</h3><small>${esc(x.time)}</small><p>${esc(x.description)}</p><div class="actions"><button class="danger" onclick="deleteUpdate(${x.id})">🗑️ Delete</button></div></div>`).join('')||'<div class="loading">No updates yet.</div>'}catch(e){fail('updateList',e)}}
+async function deleteUpdate(id){if(!confirm('Delete this update?'))return;try{await api('/api/updates/'+id,{method:'DELETE'});toast('Update deleted');loadUpdates();loadDashboard()}catch(e){alert(e.message)}}
+
+async function createPoll(){const question=document.getElementById('pollQuestion').value.trim(),option1=document.getElementById('pollOption1').value.trim(),option2=document.getElementById('pollOption2').value.trim();if(!question||!option1||!option2)return alert('Poll details bhar bhai.');try{await api('/api/polls',{method:'POST',headers:headers(),body:JSON.stringify({question,option1,option2})});['pollQuestion','pollOption1','pollOption2'].forEach(id=>document.getElementById(id).value='');toast('Poll created 🗳️');loadPolls();loadDashboard()}catch(e){alert(e.message)}}
+async function loadPolls(){try{const d=await api('/api/polls');document.getElementById('pollList').innerHTML=(d.polls||[]).map(x=>`<div class="item"><h3>${esc(x.question)}</h3><span class="pill">${esc(x.option1)}: ${x.votes1||0}</span><span class="pill">${esc(x.option2)}: ${x.votes2||0}</span><div class="actions"><button class="danger" onclick="deletePoll(${x.id})">🗑️ Delete</button></div></div>`).join('')||'<div class="loading">No polls yet.</div>'}catch(e){fail('pollList',e)}}
+async function deletePoll(id){if(!confirm('Delete this poll?'))return;try{await api('/api/polls/'+id,{method:'DELETE'});toast('Poll deleted');loadPolls();loadDashboard()}catch(e){alert(e.message)}}
+
+async function createPost(){const username=document.getElementById('communityUsername').value.trim(),user_id=document.getElementById('communityUserId').value.trim()||'admin',content=document.getElementById('communityContent').value.trim();if(!username||!content)return alert('Post details bhar bhai.');try{await api('/api/community',{method:'POST',headers:headers(),body:JSON.stringify({username,user_id,content,media_url:'',media_type:''})});document.getElementById('communityUsername').value='';document.getElementById('communityContent').value='';toast('Community post created 👥');loadCommunity();loadDashboard()}catch(e){alert(e.message)}}
+async function loadCommunity(){try{const d=await api('/api/community');document.getElementById('communityList').innerHTML=(d.posts||[]).map(x=>`<div class="item"><h3>👤 ${esc(x.username||'User')}</h3><small>${esc(x.created_at||'')}</small><p>${esc(x.content||'')}</p>${x.media_url?`<div class="url">Media: ${esc(x.media_url)}</div>`:''}<div class="actions"><span class="pill">❤️ ${x.likes||0}</span><span class="pill">💬 ${x.comments||0}</span><button class="secondary" onclick="toggleComments(${x.id},this)">💬 View Comments</button><button class="danger" onclick="deleteCommunity(${x.id})">🗑️ Delete</button></div><div id="comments-${x.id}" class="comments"></div></div>`).join('')||'<div class="loading">No community posts yet.</div>'}catch(e){fail('communityList',e)}}
+async function toggleComments(id,btn){const box=document.getElementById('comments-'+id);if(box.dataset.loaded==='1'){box.innerHTML='';box.dataset.loaded='';btn.textContent='💬 View Comments';return}try{const d=await api('/api/community/'+id+'/comments');const arr=d.comments||[];box.innerHTML=arr.length?arr.map(c=>`<div class="comment ${c.parent_id?'reply':''}"><b>${esc(c.username||'User')}</b><small> • ${esc(c.created_at||'')}</small><p style="margin-top:5px">${esc(c.comment)}</p><span class="pill">❤️ ${c.likes||0}</span></div>`).join(''):'<div class="muted" style="padding:10px">No comments/replies.</div>';box.dataset.loaded='1';btn.textContent='🔽 Hide Comments'}catch(e){box.innerHTML='<div class="error">'+esc(e.message)+'</div>'}}
+async function deleteCommunity(id){if(!confirm('Delete this community post?'))return;try{await api('/api/community/'+id,{method:'DELETE'});toast('Community post deleted');loadCommunity();loadDashboard()}catch(e){alert(e.message)}}
+
+async function sendNotification(){const title=document.getElementById('notificationTitle').value.trim(),message=document.getElementById('notificationMessage').value.trim();if(!title||!message)return alert('Notification details bhar bhai.');try{await api('/api/notifications',{method:'POST',headers:headers(),body:JSON.stringify({title,message})});document.getElementById('notificationTitle').value='';document.getElementById('notificationMessage').value='';toast('Notification sent 🔔');loadNotifications();loadDashboard()}catch(e){alert(e.message)}}
+async function loadNotifications(){try{const d=await api('/api/notifications');document.getElementById('notificationList').innerHTML=(d.notifications||[]).map(x=>`<div class="item"><h3>🔔 ${esc(x.title)}</h3><p>${esc(x.message)}</p><small>${esc(x.created_at||'')}</small><div class="actions"><button class="danger" onclick="deleteNotification(${x.id})">🗑️ Delete</button></div></div>`).join('')||'<div class="loading">No notifications yet.</div>'}catch(e){fail('notificationList',e)}}
+async function deleteNotification(id){if(!confirm('Delete notification?'))return;try{await api('/api/notifications/'+id,{method:'DELETE'});toast('Notification deleted');loadNotifications();loadDashboard()}catch(e){alert(e.message)}}
+
+async function addPhoto(){const title=document.getElementById('photoTitle').value.trim(),image_url=document.getElementById('photoUrl').value.trim();if(!title||!image_url)return alert('Photo details bhar bhai.');try{await api('/api/photos',{method:'POST',headers:headers(),body:JSON.stringify({title,image_url})});document.getElementById('photoTitle').value='';document.getElementById('photoUrl').value='';toast('Photo added 📸');loadPhotos();loadDashboard()}catch(e){alert(e.message)}}
+async function loadPhotos(){try{const d=await api('/api/photos');document.getElementById('photoList').innerHTML=(d.photos||[]).map(x=>`<div class="item"><h3>${esc(x.title)}</h3><img class="media" src="${esc(x.image_url)}" onerror="this.style.display='none'"><div class="actions"><button class="danger" onclick="deletePhoto(${x.id})">🗑️ Delete</button></div></div>`).join('')||'<div class="loading">No photos yet.</div>'}catch(e){fail('photoList',e)}}
+async function deletePhoto(id){if(!confirm('Delete this photo?'))return;try{await api('/api/photos/'+id,{method:'DELETE'});toast('Photo deleted');loadPhotos();loadDashboard()}catch(e){alert(e.message)}}
+
+async function logout(){try{if(token)await fetch(API+'/api/admin/logout',{method:'POST',headers:headers()})}catch(e){}localStorage.removeItem('adminToken');token='';location.reload()}
+if(token)showAdmin();
 </script>
-
 </body>
 </html>

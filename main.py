@@ -2016,3 +2016,5 @@ def register_user(user: UserCreate):
         "status": "success",
         "message": "User registered"
     }
+
+    

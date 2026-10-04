@@ -663,6 +663,30 @@
     }
 }
 
+
+/* ==================================================
+   FAN ZONE / GAMIFICATION
+================================================== */
+.fan-zone-card{background:linear-gradient(135deg,#171717,#0d0d0d);border:1px solid #2d2d2d;border-radius:20px;padding:18px;margin-bottom:14px;}
+.fan-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px;}
+.fan-stat{background:#202020;border:1px solid #2c2c2c;border-radius:14px;padding:12px 7px;text-align:center;}
+.fan-stat b{display:block;font-size:20px;color:#f5b400;}
+.fan-stat span{display:block;margin-top:4px;font-size:10px;color:#aaa;}
+.xp-track{height:9px;background:#292929;border-radius:20px;overflow:hidden;margin-top:10px;}
+.xp-fill{height:100%;background:linear-gradient(90deg,#f5b400,#ff7a00);border-radius:20px;transition:width .5s ease;}
+.mission{display:flex;align-items:center;gap:10px;padding:12px;margin-top:9px;background:#1b1b1b;border:1px solid #292929;border-radius:14px;}
+.mission.done{opacity:.65;}
+.mission-icon{font-size:21px;}
+.mission-text{flex:1;font-size:13px;}
+.mission-text small{display:block;color:#888;margin-top:3px;}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.badge-pill{padding:8px 10px;border-radius:12px;background:#202020;border:1px solid #333;font-size:11px;}
+.quiz-option{width:100%;text-align:left;margin-top:9px;padding:13px;border:1px solid #303030;border-radius:13px;background:#191919;color:#fff;cursor:pointer;}
+.quiz-option:hover{border-color:#f5b400;}
+.quiz-option.correct{border-color:#35c759;background:rgba(53,199,89,.12);}
+.quiz-option.wrong{border-color:#ff453a;background:rgba(255,69,58,.12);}
+.rank-badge{display:inline-block;padding:7px 11px;border-radius:20px;background:#f5b400;color:#000;font-weight:800;font-size:11px;}
+
 </style>
 </head>
 
@@ -788,8 +812,17 @@
                 <p>Quiz</p>
             </div>
 
+            <div class="quick-item" onclick="openSection('Fan Zone')">
+                <div class="icon">🔥</div>
+                <p>Fan Zone</p>
+            </div>
+
         </div>
 
+    </section>
+
+    <section class="section">
+        <div id="homeFanMini"></div>
     </section>
 
 
@@ -1518,7 +1551,11 @@ async function showCommunity() {
 // NAVIGATION
 // ==================================================
 
-async function openSection(section) {
+async function openSection(section, fromHistory=false) {
+
+    if (!fromHistory && (history.state?.section !== section)) {
+        history.pushState({section}, "", "#" + section.toLowerCase().replace(/\s+/g,"-"));
+    }
 
     document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
     const navTarget = Array.from(document.querySelectorAll(".nav-item")).find(item => item.textContent.trim().toLowerCase().includes(section.toLowerCase()));
@@ -1567,6 +1604,12 @@ async function openSection(section) {
         return;
     }
 
+    if (section === "Fan Zone") {
+        changePageTitle("🔥 Fan Zone");
+        showFanZone();
+        return;
+    }
+
     if (section === "Poll") {
         changePageTitle("🗳️ Fan Poll");
         if (pageContainer) {
@@ -1580,7 +1623,8 @@ async function openSection(section) {
     }
 }
 
-function goHome() {
+function goHome(fromHistory=false) {
+    if(!fromHistory && history.state?.section && history.state.section!=="Home"){ history.back(); return; }
     document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
     const homeNav = document.querySelector(".nav-item");
     if (homeNav) homeNav.classList.add("active");
@@ -1590,6 +1634,7 @@ function goHome() {
     changePageTitle("Elvish Army");
     window.scrollTo({top:0, behavior:"smooth"});
     loadUpdates();
+    eaRenderMini();
 }
 
 function changePageTitle(title) {
@@ -2081,8 +2126,11 @@ async function createCommunityPost() {
         }
 
 
+        eaCompleteMission("post");
+        eaAddXP(15,"community post");
+
         alert(
-            "Post successfully publish ho gaya 🔥"
+            "Post successfully publish ho gaya 🔥\n+35 XP Army reward!"
         );
 
 
@@ -2796,74 +2844,132 @@ function previewCommunityMedia(input) {
 
 
 // ==================================================
+// FAN XP / STREAK / BADGES
+// ==================================================
+
+function eaDefaultState(){
+    return {xp:0,streak:0,lastOpen:"",quizDate:"",quizCorrect:0,missions:{open:false,quiz:false,post:false},badges:[]};
+}
+
+function eaGetState(){
+    try{return {...eaDefaultState(),...JSON.parse(localStorage.getItem("ea_fan_state")||"{}")};}
+    catch(e){return eaDefaultState();}
+}
+
+function eaSaveState(state){localStorage.setItem("ea_fan_state",JSON.stringify(state));}
+
+function eaRank(xp){
+    if(xp>=1000)return ["👑 Legend",1000];
+    if(xp>=600)return ["🔥 Elite Army",600];
+    if(xp>=300)return ["⚔️ Warrior",300];
+    if(xp>=100)return ["🛡️ Soldier",100];
+    return ["🌱 Recruit",0];
+}
+
+function eaLevel(xp){return Math.floor(xp/100)+1;}
+
+function eaAddXP(amount,reason=""){
+    const s=eaGetState(); s.xp=Math.max(0,s.xp+amount);
+    if(s.xp>=1000 && !s.badges.includes("legend"))s.badges.push("legend");
+    if(s.streak>=3 && !s.badges.includes("streak3"))s.badges.push("streak3");
+    if(s.quizCorrect>=5 && !s.badges.includes("quiz5"))s.badges.push("quiz5");
+    eaSaveState(s); eaRenderMini();
+    return s;
+}
+
+function eaToday(){return new Date().toISOString().slice(0,10);}
+
+function eaYesterday(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
+
+function eaCheckIn(){
+    const s=eaGetState(), today=eaToday();
+    if(s.lastOpen!==today){
+        s.streak = s.lastOpen===eaYesterday() ? (s.streak||0)+1 : 1;
+        s.lastOpen=today;
+        s.missions={open:true,quiz:s.quizDate===today,post:false};
+        s.xp += 10;
+        if(s.streak>=3 && !s.badges.includes("streak3"))s.badges.push("streak3");
+        if(s.streak===1 && !s.badges.includes("first"))s.badges.push("first");
+        eaSaveState(s);
+    }else{
+        s.missions=s.missions||{};s.missions.open=true;eaSaveState(s);
+    }
+    eaRenderMini();
+}
+
+function eaCompleteMission(type){
+    const s=eaGetState();s.missions=s.missions||{};
+    if(s.missions[type])return false;
+    s.missions[type]=true;s.xp+=(type==="quiz"?25: type==="post"?20:0);
+    if(type==="post"&&!s.badges.includes("poster"))s.badges.push("poster");
+    eaSaveState(s);eaRenderMini();return true;
+}
+
+function eaRenderMini(){
+    const s=eaGetState(), mini=document.getElementById("homeFanMini");if(!mini)return;
+    const rank=eaRank(s.xp), next=((Math.floor(s.xp/100)+1)*100), progress=Math.min(100,(s.xp%100));
+    mini.innerHTML=`<div class="fan-zone-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+            <div><b style="font-size:18px;">🔥 Fan Streak ${s.streak||0} day${s.streak==1?'':'s'}</b><div style="color:#999;font-size:11px;margin-top:4px;">Daily Army reward • +10 XP</div></div>
+            <span class="rank-badge">${rank[0]}</span>
+        </div>
+        <div class="fan-stats"><div class="fan-stat"><b>${s.xp}</b><span>XP</span></div><div class="fan-stat"><b>${eaLevel(s.xp)}</b><span>Level</span></div><div class="fan-stat"><b>${s.badges?.length||0}</b><span>Badges</span></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:11px;color:#999;"><span>Next level</span><span>${next-s.xp} XP left</span></div>
+        <div class="xp-track"><div class="xp-fill" style="width:${progress}%;"></div></div>
+        <button class="join-btn" style="width:100%;margin-top:12px;" onclick="openSection('Fan Zone')">Open Fan Zone 🔥</button>
+    </div>`;
+}
+
+function showFanZone(){
+    const c=document.getElementById("pageContainer"),s=eaGetState(),rank=eaRank(s.xp);
+    const missions=[
+        ["open","📅","Open the app today","Daily check-in • +10 XP"],
+        ["quiz","🧠","Complete today’s quiz","Finish all questions • +25 XP"],
+        ["post","👥","Share something with Army","Make one Community post • +20 XP"]
+    ];
+    const badges={first:"🔥 First Day",streak3:"⚡ 3-Day Streak",quiz5:"🧠 Quiz Master",poster:"📣 Community Star",legend:"👑 1000 XP Legend"};
+    c.innerHTML=`<div class="fan-zone-card">
+        <div style="font-size:28px;">🔥</div><h3 style="margin-top:8px;">Your Army Journey</h3>
+        <p class="update-text">${escapeHTML(localStorage.getItem("elvish_username")||"Elvish Fan")} • Level ${eaLevel(s.xp)}</p>
+        <div style="margin-top:10px;"><span class="rank-badge">${rank[0]}</span></div>
+        <div class="fan-stats"><div class="fan-stat"><b>${s.xp}</b><span>Total XP</span></div><div class="fan-stat"><b>${s.streak}</b><span>Streak</span></div><div class="fan-stat"><b>${s.badges.length}</b><span>Badges</span></div></div>
+    </div>
+    <div class="fan-zone-card"><h3>🎯 Daily Missions</h3>${missions.map(m=>`<div class="mission ${s.missions[m[0]]?'done':''}"><div class="mission-icon">${s.missions[m[0]]?'✅':m[1]}</div><div class="mission-text"><b>${m[2]}</b><small>${s.missions[m[0]]?'Completed today 🎉':m[3]}</small></div></div>`).join('')}</div>
+    <div class="fan-zone-card"><h3>🏆 Badges</h3><div class="badges">${Object.entries(badges).map(([k,v])=>`<span class="badge-pill" style="opacity:${s.badges.includes(k)?1:.35};">${v}</span>`).join('')}</div></div>`;
+}
+
+// ==================================================
 // PROFILE
 // ==================================================
 
-function showProfile() {
-
-    const container =
-        document.getElementById(
-            "pageContainer"
-        );
-
-    container.innerHTML = `
-
-        <div class="update-card">
-
-            <div class="avatar">
-                👤
-            </div>
-
-            <h3 style="margin-top:12px;">
-                Elvish Army Fan
-            </h3>
-
-            <p class="update-text">
-                Welcome to Elvish Army community 🔥
-            </p>
-
-        </div>
-
-    `;
-
+function showProfile(){
+    const c=document.getElementById("pageContainer"),s=eaGetState(),rank=eaRank(s.xp);
+    c.innerHTML=`<div class="fan-zone-card"><div class="avatar">👤</div><h3 style="margin-top:12px;">${escapeHTML(localStorage.getItem("elvish_username")||"Elvish Army Fan")}</h3><p class="update-text">Fan Level ${eaLevel(s.xp)} • ${rank[0]}</p><div class="fan-stats"><div class="fan-stat"><b>${s.xp}</b><span>XP</span></div><div class="fan-stat"><b>${s.streak}</b><span>Streak</span></div><div class="fan-stat"><b>${s.badges.length}</b><span>Badges</span></div></div><button class="join-btn" style="width:100%;" onclick="openSection('Fan Zone')">View Fan Zone 🔥</button></div>`;
 }
 
-
 // ==================================================
-// QUIZ
+// DAILY QUIZ
 // ==================================================
 
-function showQuiz() {
+const EA_QUIZ=[
+ {q:"Elvish Army app ka main purpose kya hai?",o:["Fan community","Shopping","Banking","Weather"],a:0},
+ {q:"Community me user kya share kar sakta hai?",o:["Posts, photos & videos","Only passwords","Only calls","Nothing"],a:0},
+ {q:"Fan Zone me XP kis cheez se milta hai?",o:["Missions complete karne se","Phone charge karne se","App delete karne se","Kuch nahi"],a:0},
+ {q:"Daily streak ka matlab kya hai?",o:["Regular daily check-in","Sirf Sunday use","Logout karna","Video delete karna"],a:0},
+ {q:"Poll me user kya karta hai?",o:["Vote","Password change","App uninstall","Server restart"],a:0}
+];
 
-    const container =
-        document.getElementById(
-            "pageContainer"
-        );
-
-    container.innerHTML = `
-
-        <div class="update-card">
-
-            <div class="avatar">
-                🧠
-            </div>
-
-            <h3 style="margin-top:12px;">
-                Elvish Army Quiz
-            </h3>
-
-            <p class="update-text">
-                Quiz system ready hai bhai.
-                Next step me isko database + admin
-                se connect karenge. 🔥
-            </p>
-
-        </div>
-
-    `;
-
+function showQuiz(){
+    const c=document.getElementById("pageContainer"),s=eaGetState(),today=eaToday();
+    if(s.quizDate===today){c.innerHTML=`<div class="fan-zone-card" style="text-align:center;"><div style="font-size:50px;">🏆</div><h3>Today's Quiz Complete!</h3><p class="update-text">Aaj ka score: <b>${s.quizCorrect}/${EA_QUIZ.length}</b><br>Kal naya challenge milega 🔥</p><button class="join-btn" onclick="openSection('Fan Zone')">Back to Fan Zone</button></div>`;return;}
+    let index=0,score=0;
+    function render(){
+        const q=EA_QUIZ[index];c.innerHTML=`<div class="fan-zone-card"><div style="color:#aaa;font-size:12px;">DAILY QUIZ • ${index+1}/${EA_QUIZ.length}</div><h3 style="margin-top:10px;line-height:1.4;">${q.q}</h3><div>${q.o.map((o,i)=>`<button class="quiz-option" data-i="${i}">${escapeHTML(o)}</button>`).join('')}</div></div>`;
+        c.querySelectorAll('.quiz-option').forEach(btn=>btn.onclick=()=>{const i=Number(btn.dataset.i);c.querySelectorAll('.quiz-option').forEach(x=>x.disabled=true);if(i===q.a){btn.classList.add('correct');score++;}else{btn.classList.add('wrong');c.querySelectorAll('.quiz-option')[q.a].classList.add('correct');}setTimeout(()=>{index++;index<EA_QUIZ.length?render():finish();},500);});
+    }
+    function finish(){const st=eaGetState();st.quizDate=today;st.quizCorrect=score;st.missions=st.missions||{};st.missions.quiz=true;st.xp+=score*10+25;if(score===EA_QUIZ.length&&!st.badges.includes('quiz5'))st.badges.push('quiz5');eaSaveState(st);eaRenderMini();c.innerHTML=`<div class="fan-zone-card" style="text-align:center;"><div style="font-size:55px;">${score>=4?'🏆':'🔥'}</div><h3>Quiz Complete!</h3><p class="update-text">Score <b>${score}/${EA_QUIZ.length}</b><br>+${score*10+25} XP earned.</p><button class="join-btn" onclick="openSection('Fan Zone')">See My Rank</button></div>`;}
+    render();
 }
-
 
 // ==================================================
 // LIKE
@@ -3003,6 +3109,14 @@ async function openCommunityComments(postId) {
 
     modal.style.display = "flex";
 
+    if (!(history.state && history.state.modal === "comments")) {
+        history.pushState({
+            section: (history.state && history.state.section) || "Community",
+            modal: "comments",
+            postId: postId
+        }, "", "#comments-" + postId);
+    }
+
     cancelCommunityReply();
 
     await loadCommunityComments(postId);
@@ -3013,7 +3127,7 @@ async function openCommunityComments(postId) {
 // CLOSE COMMENTS
 // ==================================================
 
-function closeCommunityComments() {
+function closeCommunityComments(fromHistory=false) {
 
     const modal =
         document.getElementById(
@@ -3024,6 +3138,10 @@ function closeCommunityComments() {
 
     activeCommunityPostId = null;
     activeCommunityReplyId = null;
+
+    if (!fromHistory && history.state && history.state.modal === "comments") {
+        history.back();
+    }
 }
 
 
@@ -3593,6 +3711,8 @@ async function submitCommunityComment() {
 
 async function startApp() {
 
+    eaCheckIn();
+
     console.log(
         "Elvish Army App Started 🔥"
     );
@@ -3611,6 +3731,21 @@ async function startApp() {
 
 }
 
+
+// ==================================================
+// APP HISTORY / ANDROID BACK
+// ==================================================
+window.addEventListener("popstate", async (event)=>{
+    const state=event.state||{section:"Home"};
+    const modal=document.getElementById("communityCommentsModal");
+    if(modal && modal.style.display === "flex" && state.modal !== "comments"){
+        closeCommunityComments(true);
+        if(state.section && state.section !== "Home") return;
+    }
+    if(state.section==="Home") goHome(true);
+    else await openSection(state.section,true);
+});
+if(!history.state || !history.state.section){history.replaceState({section:"Home"},"",window.location.pathname+window.location.search+"#home");}
 
 // START APP
 startApp();
