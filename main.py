@@ -15,6 +15,10 @@ from pydantic import BaseModel
 
 import sqlite3
 import secrets
+import base64
+import json
+import logging
+import re
 
 from datetime import datetime
 
@@ -77,16 +81,68 @@ app.add_middleware(
 # DATABASE
 # =====================================================
 
-DB_NAME = "elvish_army.db"
+DB_NAME = os.getenv("ELVISH_ARMY_DB_PATH", "elvish_army.db")
+
+# Firebase Admin SDK credentials are supplied through Render Environment Variables.
+# Supported: FIREBASE_SERVICE_ACCOUNT_BASE64, FIREBASE_SERVICE_ACCOUNT_JSON,
+# or GOOGLE_APPLICATION_CREDENTIALS (file path).
+logger = logging.getLogger("elvish_army.firebase")
+FIRESTORE = None
+FIREBASE_ENABLED = False
+FIREBASE_LAST_ERROR = ""
+FIRESTORE_SYNC_ENABLED = False
+
+FIRESTORE_TABLES = (
+    "updates", "news", "videos", "photos", "community_comments",
+    "poll_votes", "users", "community_posts", "community_post_likes",
+    "polls", "notifications", "app_stats"
+)
+
+def init_firebase():
+    global FIRESTORE, FIREBASE_ENABLED, FIREBASE_LAST_ERROR
+    try:
+        import firebase_admin
+        from firebase_admin import credentials, firestore
+
+        if not firebase_admin._apps:
+            b64_value = os.getenv("FIREBASE_SERVICE_ACCOUNT_BASE64", "").strip()
+            json_value = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON", "").strip()
+            file_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
+
+            if b64_value:
+                raw = base64.b64decode(b64_value).decode("utf-8")
+                cred = credentials.Certificate(json.loads(raw))
+            elif json_value:
+                cred = credentials.Certificate(json.loads(json_value))
+            elif file_path and os.path.isfile(file_path):
+                cred = credentials.Certificate(file_path)
+            else:
+                FIREBASE_LAST_ERROR = "Firebase credentials are not configured"
+                logger.warning(FIREBASE_LAST_ERROR)
+                return
+
+            firebase_admin.initialize_app(cred)
+
+        FIRESTORE = firestore.client()
+        FIREBASE_ENABLED = True
+        FIREBASE_LAST_ERROR = ""
+        logger.info("Firebase Firestore connected")
+    except Exception as exc:
+        FIREBASE_ENABLED = False
+        FIRESTORE = None
+        FIREBASE_LAST_ERROR = str(exc)
+        logger.exception("Firebase initialization failed")
+
+init_firebase()
 
 
 # =====================================================
 # ADMIN
 # =====================================================
 
-ADMIN_USERNAME = "admin"
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 
-ADMIN_PASSWORD = "elvish123"
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "elvish123")
 
 
 # =====================================================
@@ -99,13 +155,139 @@ admin_tokens = set()
 # DATABASE
 # =====================================================
 
+class DatabaseConnection:
+    """SQLite-compatible wrapper that mirrors modified tables to Firestore."""
+    def __init__(self, connection):
+        self._conn = connection
+        self._changed_tables = set()
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+    def execute(self, *args, **kwargs):
+        sql = args[0] if args else ""
+        match = re.search(
+            r"\b(?:INSERT(?:\s+OR\s+\w+)?\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO)\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+            str(sql),
+            re.IGNORECASE
+        )
+        if match:
+            self._changed_tables.add(match.group(1).lower())
+        return self._conn.execute(*args, **kwargs)
+
+    def commit(self):
+        self._conn.commit()
+        if FIREBASE_ENABLED and FIRESTORE_SYNC_ENABLED and self._changed_tables:
+            changed = self._changed_tables.intersection(FIRESTORE_TABLES)
+            try:
+                if changed:
+                    sync_sqlite_to_firestore(self._conn, changed)
+            except Exception as exc:
+                global FIREBASE_LAST_ERROR
+                FIREBASE_LAST_ERROR = str(exc)
+                logger.exception("Firestore sync failed after SQLite commit")
+                raise RuntimeError("Firestore sync failed. Check Render logs and Firebase credentials.") from exc
+            finally:
+                self._changed_tables.clear()
+
+    def close(self):
+        self._conn.close()
+
+
 def get_db():
-
-    conn = sqlite3.connect(DB_NAME)
-
+    conn = sqlite3.connect(DB_NAME, timeout=30)
     conn.row_factory = sqlite3.Row
+    return DatabaseConnection(conn)
 
-    return conn
+
+def _firestore_collection(table_name):
+    return FIRESTORE.collection("elvish_army_" + table_name)
+
+
+def sync_sqlite_to_firestore(connection, table_names=None):
+    """Mirror SQLite tables to Firestore collections."""
+    if not FIRESTORE:
+        return
+    global FIREBASE_LAST_ERROR
+    selected_tables = table_names or FIRESTORE_TABLES
+    for table_name in selected_tables:
+        rows = connection.execute(f"SELECT * FROM {table_name}").fetchall()
+        collection = _firestore_collection(table_name)
+        existing = {doc.id: doc.to_dict() for doc in collection.stream()}
+        current_ids = set()
+        writes = []
+        for row in rows:
+            item = dict(row)
+            doc_id = str(item.get("id"))
+            current_ids.add(doc_id)
+            if existing.get(doc_id) != item:
+                writes.append(("set", doc_id, item))
+        for doc_id in existing.keys() - current_ids:
+            writes.append(("delete", doc_id, None))
+        # Keep batches below Firestore's 500-operation limit.
+        for start in range(0, len(writes), 400):
+            batch = FIRESTORE.batch()
+            for action, doc_id, item in writes[start:start + 400]:
+                ref = collection.document(doc_id)
+                if action == "delete":
+                    batch.delete(ref)
+                else:
+                    batch.set(ref, item)
+            batch.commit()
+    FIREBASE_LAST_ERROR = ""
+
+
+def restore_firestore_to_sqlite(connection):
+    """Restore Firestore collections into the local SQLite cache on Render restart."""
+    if not FIRESTORE:
+        return
+    for table_name in FIRESTORE_TABLES:
+        documents = list(_firestore_collection(table_name).stream())
+        if not documents:
+            continue
+        rows = [doc.to_dict() for doc in documents]
+        if not rows:
+            continue
+        columns = list(rows[0].keys())
+        # These are app-owned collections; replace the local table with its cloud copy.
+        connection.execute(f"DELETE FROM {table_name}")
+        placeholders = ",".join("?" for _ in columns)
+        column_sql = ",".join('"' + col.replace('"', '""') + '"' for col in columns)
+        sql = f"INSERT OR REPLACE INTO {table_name} ({column_sql}) VALUES ({placeholders})"
+        for row in rows:
+            connection.execute(sql, [row.get(col) for col in columns])
+    connection.commit()
+
+
+def firebase_startup_sync():
+    global FIRESTORE_SYNC_ENABLED, FIREBASE_LAST_ERROR
+    if not FIREBASE_ENABLED:
+        return
+    try:
+        raw = sqlite3.connect(DB_NAME, timeout=30)
+        raw.row_factory = sqlite3.Row
+        restore_firestore_to_sqlite(raw)
+        # Initial deployment migrates existing SQLite rows; subsequent restarts
+        # restore cloud records before enabling normal mirroring.
+        sync_sqlite_to_firestore(raw)
+        raw.close()
+        FIRESTORE_SYNC_ENABLED = True
+        FIREBASE_LAST_ERROR = ""
+        logger.info("Firestore restore/mirror ready")
+    except Exception as exc:
+        FIRESTORE_SYNC_ENABLED = False
+        FIREBASE_LAST_ERROR = str(exc)
+        logger.exception("Firestore startup sync failed")
+
+
+@app.get("/api/firebase/status")
+def firebase_status():
+    return {
+        "status": "connected" if FIREBASE_ENABLED and not FIREBASE_LAST_ERROR else "not_connected",
+        "firebase_enabled": FIREBASE_ENABLED,
+        "firestore_sync_enabled": FIRESTORE_SYNC_ENABLED,
+        "message": "Firestore connected and syncing" if FIREBASE_ENABLED and FIRESTORE_SYNC_ENABLED and not FIREBASE_LAST_ERROR else (FIREBASE_LAST_ERROR or "Firebase is not configured")
+    }
 
 
 # =====================================================
@@ -458,6 +640,10 @@ init_extra_db()
 migrate_community_posts()
 
 migrate_community_comments()
+
+# Run after all tables/migrations exist. If credentials are not configured,
+# the existing SQLite-only behavior remains available.
+firebase_startup_sync()
 
 # =====================================================
 # MODELS

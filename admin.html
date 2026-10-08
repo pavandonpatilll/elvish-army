@@ -45,6 +45,7 @@ button:disabled{opacity:.5;cursor:not-allowed}.login{max-width:430px;margin:55px
     <p class="muted" style="margin-top:5px">Admin Control Panel • Live Backend Connected</p>
     <div class="top-actions">
       <span class="pill">🟢 API Connected</span>
+      <span id="firebaseStatus" class="pill">🔥 Checking Firebase...</span>
       <button class="danger" onclick="logout()">Logout</button>
     </div>
   </div>
@@ -149,7 +150,25 @@ async function login(){
   try{const r=await fetch(API+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Login failed');token=d.token;localStorage.setItem('adminToken',token);showAdmin();toast('Admin login successful 🔥')}catch(e){msg.textContent=e.message}}
 function showAdmin(){document.getElementById('login').classList.add('hidden');document.getElementById('admin').classList.remove('hidden');loadAll()}
 function showTab(id,el){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');if(id==='dashboard')loadDashboard()}
-async function loadAll(){await Promise.allSettled([loadDashboard(),loadNews(),loadVideos(),loadUpdates(),loadPolls(),loadCommunity(),loadNotifications(),loadPhotos()])}
+async function checkFirebase(){
+  const el=document.getElementById('firebaseStatus');
+  if(!el)return;
+  try{
+    const r=await fetch(API+'/api/firebase/status');
+    const d=await r.json();
+    if(d.firestore_sync_enabled && d.status==='connected'){
+      el.textContent='🔥 Firestore Connected';
+      el.style.color='#35c759';
+    }else{
+      el.textContent='⚠️ Firebase: '+(d.message||'not configured');
+      el.style.color='#ff7777';
+    }
+  }catch(e){
+    el.textContent='⚠️ Firebase status unavailable';
+    el.style.color='#ff7777';
+  }
+}
+async function loadAll(){await Promise.allSettled([checkFirebase(),loadDashboard(),loadNews(),loadVideos(),loadUpdates(),loadPolls(),loadCommunity(),loadNotifications(),loadPhotos()])}
 function fail(id,e){document.getElementById(id).innerHTML='<div class="error">'+esc(e.message)+'</div>'}
 
 async function loadDashboard(){try{const d=await api('/api/admin/dashboard'),s=d.stats||{};const labels=[['👤','Users',s.users],['👁️','Views',s.views],['🔥','Updates',s.updates],['📰','News',s.news],['🎬','Videos',s.videos],['📸','Photos',s.photos],['🗳️','Polls',s.polls],['👥','Community',s.community_posts],['🔔','Notifications',s.notifications]];document.getElementById('dashboardStats').innerHTML=labels.map(x=>`<div class="stat">${x[0]} ${x[1]}<b>${x[2]??0}</b></div>`).join('')}catch(e){fail('dashboardStats',e)}}
