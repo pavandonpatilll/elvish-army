@@ -685,6 +685,12 @@
 .quiz-option:hover{border-color:#f5b400;}
 .quiz-option.correct{border-color:#35c759;background:rgba(53,199,89,.12);}
 .quiz-option.wrong{border-color:#ff453a;background:rgba(255,69,58,.12);}
+.quiz-timer-wrap{display:flex;align-items:center;gap:10px;margin:14px 0 8px;}
+.quiz-timer-number{display:grid;place-items:center;min-width:42px;height:42px;border-radius:50%;border:3px solid #f5b400;color:#f5b400;font-weight:900;font-size:15px;flex-shrink:0;}
+.quiz-timer-track{height:8px;background:#303030;border-radius:20px;overflow:hidden;flex:1;}
+.quiz-timer-fill{height:100%;width:100%;background:linear-gradient(90deg,#37d67a,#f5b400,#ff453a);transition:width .1s linear;}
+.quiz-disclaimer{font-size:11px;color:#aaa;background:#202020;border:1px solid #303030;border-radius:12px;padding:10px;margin-top:12px;line-height:1.5;}
+.quiz-feedback{font-size:13px;color:#ddd;line-height:1.5;margin-top:12px;}
 .rank-badge{display:inline-block;padding:7px 11px;border-radius:20px;background:#f5b400;color:#000;font-weight:800;font-size:11px;}
 
 
@@ -835,7 +841,7 @@ button,.quick-item,.nav-item,.action,.page-back,.post-btn,.join-btn,.media-btn,.
 
             <div class="quick-item" onclick="openSection('Quiz')">
                 <div class="icon">🧠</div>
-                <p>Quiz</p>
+                <p>Quiz&earn</p>
             </div>
 
             <div class="quick-item" onclick="openSection('Fan Zone')">
@@ -2978,22 +2984,49 @@ function showProfile(){
 // ==================================================
 
 const EA_QUIZ=[
- {q:"Elvish Army app ka main purpose kya hai?",o:["Fan community","Shopping","Banking","Weather"],a:0},
- {q:"Community me user kya share kar sakta hai?",o:["Posts, photos & videos","Only passwords","Only calls","Nothing"],a:0},
- {q:"Fan Zone me XP kis cheez se milta hai?",o:["Missions complete karne se","Phone charge karne se","App delete karne se","Kuch nahi"],a:0},
- {q:"Daily streak ka matlab kya hai?",o:["Regular daily check-in","Sirf Sunday use","Logout karna","Video delete karna"],a:0},
- {q:"Poll me user kya karta hai?",o:["Vote","Password change","App uninstall","Server restart"],a:0}
+ {q:"Elvish Yadav ne Bigg Boss OTT ka kaunsa season jeeta tha?",o:["Season 1","Season 2","Season 3","Season 4"],a:1,why:"Elvish Yadav Bigg Boss OTT 2 ke winner bane the."},
+ {q:"Elvish Yadav ne Bigg Boss OTT 2 ka finale kis date ko jeeta?",o:["14 August 2023","15 August 2023","17 June 2023","14 September 2023"],a:0,why:"Bigg Boss OTT 2 ka grand finale 14 August 2023 ko hua tha."},
+ {q:"Bigg Boss OTT 2 finale kis time stream hona shuru hua tha?",o:["6 PM IST","7 PM IST","9 PM IST","11 PM IST"],a:2,why:"Media reports ke mutabik finale 14 August ko raat 9 baje stream hona shuru hua."},
+ {q:"Bigg Boss OTT 2 mein Elvish Yadav ke baad first runner-up kaun the?",o:["Manisha Rani","Abhishek Malhan","Pooja Bhatt","Bebika Dhurve"],a:1,why:"Abhishek Malhan finale mein first runner-up rahe."},
+ {q:"Bigg Boss OTT 2 ko kaun host kar rahe the?",o:["Amitabh Bachchan","Rohit Shetty","Salman Khan","Karan Johar"],a:2,why:"Bigg Boss OTT 2 ko Salman Khan ne host kiya tha."},
+ {q:"Elvish Yadav ke YouTube channel ki creation date kya listed hai?",o:["29 April 2016","14 August 2017","1 January 2018","17 June 2020"],a:0,why:"Channel statistics listing par creation date 29 April 2016 di gayi hai. Ye channel creation date hai, first video upload ki date zaroori nahi."},
+ {q:"Elvish Yadav ne Bigg Boss OTT 2 mein kis tarah entry li thi?",o:["Original contestant","Wildcard contestant","Guest host","Judge"],a:1,why:"Elvish Yadav wildcard contestant ke roop mein show mein aaye the."},
+ {q:"Bigg Boss OTT 2 ka grand finale kis platform par stream hua tha?",o:["JioCinema","Netflix","Prime Video","SonyLIV"],a:0,why:"Bigg Boss OTT 2 JioCinema par stream hua tha."},
+ {q:"Elvish Yadav ka hometown aam taur par kis city se joda jata hai?",o:["Gurugram","Jaipur","Lucknow","Bhopal"],a:0,why:"Elvish Yadav Gurugram, Haryana se hain."},
+ {q:"Bigg Boss OTT 2 jeetne par Elvish ko reported prize money kitni mili thi?",o:["₹10 lakh","₹15 lakh","₹25 lakh","₹50 lakh"],a:2,why:"Contemporary reports ne ₹25 lakh prize money report ki thi."}
 ];
 
 function showQuiz(){
     const c=document.getElementById("pageContainer"),s=eaGetState(),today=eaToday();
-    if(s.quizDate===today){c.innerHTML=`<div class="fan-zone-card" style="text-align:center;"><div style="font-size:50px;">🏆</div><h3>Today's Quiz Complete!</h3><p class="update-text">Aaj ka score: <b>${s.quizCorrect}/${EA_QUIZ.length}</b><br>Kal naya challenge milega 🔥</p><button class="join-btn" onclick="openSection('Fan Zone')">Back to Fan Zone</button></div>`;return;}
-    let index=0,score=0;
-    function render(){
-        const q=EA_QUIZ[index];c.innerHTML=`<div class="fan-zone-card"><div style="color:#aaa;font-size:12px;">DAILY QUIZ • ${index+1}/${EA_QUIZ.length}</div><h3 style="margin-top:10px;line-height:1.4;">${q.q}</h3><div>${q.o.map((o,i)=>`<button class="quiz-option" data-i="${i}">${escapeHTML(o)}</button>`).join('')}</div></div>`;
-        c.querySelectorAll('.quiz-option').forEach(btn=>btn.onclick=()=>{const i=Number(btn.dataset.i);c.querySelectorAll('.quiz-option').forEach(x=>x.disabled=true);if(i===q.a){btn.classList.add('correct');score++;}else{btn.classList.add('wrong');c.querySelectorAll('.quiz-option')[q.a].classList.add('correct');}setTimeout(()=>{index++;index<EA_QUIZ.length?render():finish();},500);});
+    const DAILY_COUNT=5,SECONDS_PER_QUESTION=5;
+    if(s.quizDate===today){c.innerHTML=`<div class="fan-zone-card" style="text-align:center;"><div style="font-size:50px;">🏆</div><h3>Today's Quiz Complete!</h3><p class="update-text">Aaj ka score: <b>${s.quizCorrect}/${DAILY_COUNT}</b><br>Kal naya challenge milega 🔥</p><div class="quiz-disclaimer">Ye free knowledge quiz hai. XP aur badges game points hain, cash balance ya withdrawable money nahi.</div><button class="join-btn" onclick="openSection('Fan Zone')">Back to Fan Zone</button></div>`;return;}
+    // Aaj ke liye five questions select karo; reload par same set rahega.
+    const key="ea_quiz_questions_"+today;
+    let selectedIds=[];
+    try{selectedIds=JSON.parse(localStorage.getItem(key)||"[]");}catch(e){}
+    if(!Array.isArray(selectedIds)||selectedIds.length!==DAILY_COUNT||selectedIds.some(i=>!Number.isInteger(i)||i<0||i>=EA_QUIZ.length)){
+        selectedIds=[...EA_QUIZ.keys()].sort(()=>Math.random()-.5).slice(0,DAILY_COUNT);
+        localStorage.setItem(key,JSON.stringify(selectedIds));
     }
-    function finish(){const st=eaGetState();st.quizDate=today;st.quizCorrect=score;st.missions=st.missions||{};st.missions.quiz=true;st.xp+=score*10+25;if(score===EA_QUIZ.length&&!st.badges.includes('quiz5'))st.badges.push('quiz5');eaSaveState(st);eaRenderMini();c.innerHTML=`<div class="fan-zone-card" style="text-align:center;"><div style="font-size:55px;">${score>=4?'🏆':'🔥'}</div><h3>Quiz Complete!</h3><p class="update-text">Score <b>${score}/${EA_QUIZ.length}</b><br>+${score*10+25} XP earned.</p><button class="join-btn" onclick="openSection('Fan Zone')">See My Rank</button></div>`;}
+    const questions=selectedIds.map(i=>EA_QUIZ[i]);
+    let index=0,score=0,timerInterval=null,advanceTimeout=null,locked=false,finished=false;
+    function clearQuizTimers(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}if(advanceTimeout){clearTimeout(advanceTimeout);advanceTimeout=null;}}
+    function moveNext(){clearQuizTimers();index++;if(index<questions.length)render();else finish();}
+    function render(){
+        clearQuizTimers();locked=false;
+        const q=questions[index];let seconds=SECONDS_PER_QUESTION;
+        c.innerHTML=`<div class="fan-zone-card"><div style="display:flex;justify-content:space-between;align-items:center;color:#aaa;font-size:12px;gap:8px;"><span>👑 ELVISH FAN QUIZ</span><b>${index+1}/${questions.length}</b></div><div class="xp-track" style="margin-top:12px;"><div class="xp-fill" style="width:${((index)/questions.length)*100}%;"></div></div><div class="quiz-timer-wrap"><div class="quiz-timer-number" id="quizTimerNumber">${seconds}</div><div style="flex:1;"><div style="font-size:11px;color:#aaa;margin-bottom:6px;">ANSWER BEFORE TIME RUNS OUT</div><div class="quiz-timer-track"><div class="quiz-timer-fill" id="quizTimerFill"></div></div></div></div><h3 style="margin-top:14px;line-height:1.45;">${escapeHTML(q.q)}</h3><div id="quizOptions">${q.o.map((o,i)=>`<button class="quiz-option" data-i="${i}">${escapeHTML(o)}</button>`).join('')}</div><div class="quiz-feedback" id="quizFeedback" aria-live="polite"></div><div class="quiz-disclaimer">Free quiz • Correct answers se XP/badges milte hain. XP cash nahi hai; koi entry fee ya cash payout nahi.</div></div>`;
+        const options=[...c.querySelectorAll('.quiz-option')];
+        function answer(i,timedOut=false){if(locked)return;locked=true;if(timerInterval){clearInterval(timerInterval);timerInterval=null;}options.forEach(x=>x.disabled=true);
+            if(!timedOut&&i===q.a){score++;options[i].classList.add('correct');}
+            else {if(!timedOut&&i>=0)options[i].classList.add('wrong');options[q.a].classList.add('correct');}
+            const feedback=c.querySelector('#quizFeedback');if(feedback)feedback.textContent=(timedOut?'⏱️ Time up! ':'')+q.why;
+            advanceTimeout=setTimeout(moveNext,850);
+        }
+        options.forEach(btn=>btn.addEventListener('click',()=>answer(Number(btn.dataset.i))));
+        timerInterval=setInterval(()=>{seconds--;const n=c.querySelector('#quizTimerNumber'),f=c.querySelector('#quizTimerFill');if(n)n.textContent=seconds;if(f)f.style.width=Math.max(0,seconds/SECONDS_PER_QUESTION*100)+'%';if(seconds<=0)answer(-1,true);},1000);
+    }
+    function finish(){if(finished)return;finished=true;clearQuizTimers();const st=eaGetState();st.quizDate=today;st.quizCorrect=score;st.missions=st.missions||{};st.missions.quiz=true;st.xp+=score*10+25;if(score===DAILY_COUNT&&!st.badges.includes('quiz5'))st.badges.push('quiz5');eaSaveState(st);eaRenderMini();c.innerHTML=`<div class="fan-zone-card" style="text-align:center;"><div style="font-size:55px;">${score>=4?'🏆':'🔥'}</div><h3>Quiz Complete!</h3><p class="update-text">Score <b>${score}/${DAILY_COUNT}</b><br>+${score*10+25} XP earned.</p><div class="quiz-disclaimer">XP sirf in-app points aur badges hain, real money nahi. Elvish Army ko ads aur clearly-labelled sponsorships se monetize kiya ja sakta hai; quiz score ke badle cash payout enabled nahi hai.</div><button class="join-btn" onclick="openSection('Fan Zone')">See My Rank</button></div>`;}
     render();
 }
 
