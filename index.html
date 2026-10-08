@@ -736,6 +736,79 @@ body{background:radial-gradient(ellipse at 10% 0%,rgba(134,87,255,.17),transpare
 .bottom-nav{background:rgba(13,11,23,.96);border-top:1px solid var(--social-border)}.nav-item.active{color:#ff70b2}.nav-icon{filter:drop-shadow(0 0 8px rgba(255,63,135,.12))}
 @media(max-width:520px){.social-stat b{font-size:18px}.social-reel-card{height:calc(100dvh - 155px);min-height:430px}.social-user-row{gap:8px}.social-btn{padding:9px 11px}}
 
+
+/* FINAL RESPONSIVE FIX — phones, foldables, tablets and desktop */
+:root {
+  --ea-content: min(calc(100% - clamp(14px, 4vw, 36px)), 1100px);
+}
+html, body {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: clip;
+}
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+}
+.header {
+  width: 100%;
+  max-width: none;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+}
+.hero, .section, #pageContainer, .page-header {
+  width: var(--ea-content);
+  max-width: 1100px;
+  box-sizing: border-box;
+}
+.section { padding-left: 0; padding-right: 0; }
+#pageContainer { margin-left: auto !important; margin-right: auto !important; }
+.bottom-nav {
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: none;
+  transform: none;
+  padding-left: max(2px, env(safe-area-inset-left, 0px));
+  padding-right: max(2px, env(safe-area-inset-right, 0px));
+  justify-content: space-evenly;
+}
+.bottom-nav .nav-item {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 4px 1px;
+  font-size: clamp(9px, 2.7vw, 12px);
+}
+.bottom-nav .nav-icon { font-size: clamp(18px, 5.2vw, 24px); }
+.quick-menu { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+img, video, iframe, canvas { max-width: 100%; }
+input, textarea, select, button { max-width: 100%; }
+.social-chat { height: min(65dvh, 700px); }
+.social-reel-card, .reel-card { max-width: 100%; }
+@media (min-width: 700px) {
+  .hero, .section, #pageContainer, .page-header { width: min(calc(100% - 40px), 1100px); }
+  .quick-menu { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+  .bottom-nav { justify-content: center; gap: clamp(10px, 2vw, 30px); }
+  .bottom-nav .nav-item { flex: 0 1 100px; }
+}
+@media (max-width: 390px) {
+  .bottom-nav { height: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .bottom-nav .nav-item { font-size: 9px; }
+  .bottom-nav .nav-icon { font-size: 18px; margin-bottom: 2px; }
+  .social-actions { gap: 6px; }
+  .social-btn { padding: 9px 10px; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .bottom-nav { height: calc(54px + env(safe-area-inset-bottom, 0px)); }
+  body { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+  .social-reel-card, .reel-card { height: 78dvh; min-height: 260px; }
+}
+
 </style>
 <link rel="preconnect" href="https://elvish-army-api.onrender.com" crossorigin>
 </head>
