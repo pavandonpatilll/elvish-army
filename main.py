@@ -95,7 +95,8 @@ FIRESTORE_SYNC_ENABLED = False
 FIRESTORE_TABLES = (
     "updates", "news", "videos", "photos", "community_comments",
     "poll_votes", "users", "community_posts", "community_post_likes",
-    "polls", "notifications", "app_stats"
+    "polls", "notifications", "app_stats",
+    "social_profiles", "social_follows", "direct_messages", "social_reports"
 )
 
 def init_firebase():
@@ -640,6 +641,49 @@ init_extra_db()
 migrate_community_posts()
 
 migrate_community_comments()
+
+# Instagram-style social features (profiles, follows, DMs, reports).
+def init_social_db():
+    conn = get_db()
+    conn.execute("""CREATE TABLE IF NOT EXISTS social_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL UNIQUE,
+        username TEXT NOT NULL,
+        bio TEXT DEFAULT '',
+        avatar_url TEXT DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS social_follows (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        follower_id TEXT NOT NULL,
+        following_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE(follower_id, following_id)
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS direct_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender_id TEXT NOT NULL,
+        sender_name TEXT NOT NULL,
+        recipient_id TEXT NOT NULL,
+        body TEXT DEFAULT '',
+        media_url TEXT DEFAULT '',
+        media_type TEXT DEFAULT '',
+        created_at TEXT NOT NULL,
+        read_at TEXT DEFAULT ''
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS social_reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reporter_id TEXT NOT NULL,
+        target_type TEXT NOT NULL,
+        target_id TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )""")
+    conn.commit()
+    conn.close()
+
+init_social_db()
 
 # Run after all tables/migrations exist. If credentials are not configured,
 # the existing SQLite-only behavior remains available.
@@ -1571,6 +1615,7 @@ def create_community_post(
         datetime.now().strftime("%Y-%m-%d %H:%M")
     ))
 
+    _ensure_social_profile(conn, post.user_id, post.username)
     conn.commit()
 
     post_id = cursor.lastrowid
@@ -2204,3 +2249,232 @@ def register_user(user: UserCreate):
     }
 
     
+
+
+# =====================================================
+# SOCIAL PROFILES / FOLLOW GRAPH / DIRECT MESSAGES
+# =====================================================
+class SocialProfileUpdate(BaseModel):
+    user_id: str
+    username: str
+    bio: str = ""
+    avatar_url: str = ""
+
+class FollowAction(BaseModel):
+    follower_id: str
+    following_id: str
+
+class DirectMessageCreate(BaseModel):
+    sender_id: str
+    sender_name: str
+    recipient_id: str
+    body: str = ""
+    media_url: str = ""
+    media_type: str = ""
+
+class SocialReportCreate(BaseModel):
+    reporter_id: str
+    target_type: str
+    target_id: str
+    reason: str
+
+
+def _ensure_social_profile(conn, user_id: str, username: str = "Elvish Fan"):
+    user_id = (user_id or "").strip()[:100]
+    username = (username or "Elvish Fan").strip()[:30] or "Elvish Fan"
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID missing")
+    existing = conn.execute("SELECT id FROM social_profiles WHERE user_id = ?", (user_id,)).fetchone()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if existing:
+        conn.execute("UPDATE social_profiles SET username = ?, updated_at = ? WHERE user_id = ?", (username, now, user_id))
+    else:
+        conn.execute("INSERT INTO social_profiles (user_id, username, bio, avatar_url, created_at, updated_at) VALUES (?, ?, '', '', ?, ?)", (user_id, username, now, now))
+
+
+def _profile_payload(conn, user_id: str, viewer_id: str = ""):
+    profile = conn.execute("SELECT * FROM social_profiles WHERE user_id = ?", (user_id,)).fetchone()
+    if not profile:
+        return None
+    posts_count = conn.execute("SELECT COUNT(*) AS n FROM community_posts WHERE user_id = ?", (user_id,)).fetchone()["n"]
+    followers = conn.execute("SELECT COUNT(*) AS n FROM social_follows WHERE following_id = ?", (user_id,)).fetchone()["n"]
+    following = conn.execute("SELECT COUNT(*) AS n FROM social_follows WHERE follower_id = ?", (user_id,)).fetchone()["n"]
+    is_following = 0
+    if viewer_id:
+        is_following = 1 if conn.execute("SELECT id FROM social_follows WHERE follower_id = ? AND following_id = ?", (viewer_id, user_id)).fetchone() else 0
+    return {"user_id": profile["user_id"], "username": profile["username"], "bio": profile["bio"] or "", "avatar_url": profile["avatar_url"] or "", "posts_count": posts_count, "followers_count": followers, "following_count": following, "is_following": bool(is_following), "created_at": profile["created_at"]}
+
+
+@app.put("/api/social/profile")
+def save_social_profile(data: SocialProfileUpdate):
+    user_id = data.user_id.strip()[:100]
+    username = data.username.strip()[:30]
+    if not user_id or not username:
+        raise HTTPException(status_code=400, detail="User ID aur username required hai")
+    conn = get_db()
+    _ensure_social_profile(conn, user_id, username)
+    conn.execute("UPDATE social_profiles SET username = ?, bio = ?, avatar_url = ?, updated_at = ? WHERE user_id = ?", (username, data.bio.strip()[:160], data.avatar_url.strip()[:500], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), user_id))
+    conn.commit()
+    result = _profile_payload(conn, user_id, user_id)
+    conn.close()
+    return {"status": "success", "profile": result}
+
+
+@app.get("/api/social/profile/{user_id}")
+def get_social_profile(user_id: str, viewer_id: str = "", username: str = ""):
+    conn = get_db()
+    if not conn.execute("SELECT id FROM social_profiles WHERE user_id = ?", (user_id,)).fetchone() and username:
+        _ensure_social_profile(conn, user_id, username)
+        conn.commit()
+    result = _profile_payload(conn, user_id, viewer_id)
+    if result is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Profile nahi mila")
+    conn.close()
+    return {"status": "success", "profile": result}
+
+
+@app.get("/api/social/search")
+def search_social_users(q: str = "", viewer_id: str = ""):
+    query = q.strip()[:60]
+    conn = get_db()
+    if query:
+        rows = conn.execute("SELECT user_id FROM social_profiles WHERE username LIKE ? OR bio LIKE ? ORDER BY updated_at DESC LIMIT 40", (f"%{query}%", f"%{query}%")).fetchall()
+    else:
+        rows = conn.execute("SELECT user_id FROM social_profiles ORDER BY updated_at DESC LIMIT 40").fetchall()
+    users = []
+    for row in rows:
+        item = _profile_payload(conn, row["user_id"], viewer_id)
+        if item:
+            users.append(item)
+    conn.close()
+    return {"status": "success", "users": users}
+
+
+@app.post("/api/social/follow")
+def toggle_social_follow(data: FollowAction):
+    follower_id = data.follower_id.strip()[:100]
+    following_id = data.following_id.strip()[:100]
+    if not follower_id or not following_id or follower_id == following_id:
+        raise HTTPException(status_code=400, detail="Khud ko follow nahi kar sakte")
+    conn = get_db()
+    if not conn.execute("SELECT id FROM social_profiles WHERE user_id = ?", (follower_id,)).fetchone():
+        _ensure_social_profile(conn, follower_id, "Elvish Fan")
+    if not conn.execute("SELECT id FROM social_profiles WHERE user_id = ?", (following_id,)).fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="User profile nahi mila")
+    existing = conn.execute("SELECT id FROM social_follows WHERE follower_id = ? AND following_id = ?", (follower_id, following_id)).fetchone()
+    if existing:
+        conn.execute("DELETE FROM social_follows WHERE follower_id = ? AND following_id = ?", (follower_id, following_id))
+        following = False
+    else:
+        conn.execute("INSERT INTO social_follows (follower_id, following_id, created_at) VALUES (?, ?, ?)", (follower_id, following_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        following = True
+    conn.commit()
+    result = _profile_payload(conn, following_id, follower_id)
+    conn.close()
+    return {"status": "success", "following": following, "profile": result}
+
+
+@app.get("/api/social/followers/{user_id}")
+def get_social_followers(user_id: str, viewer_id: str = ""):
+    conn = get_db()
+    rows = conn.execute("SELECT follower_id AS uid FROM social_follows WHERE following_id = ? ORDER BY id DESC LIMIT 500", (user_id,)).fetchall()
+    users = [p for r in rows if (p := _profile_payload(conn, r["uid"], viewer_id))]
+    conn.close()
+    return {"status": "success", "users": users}
+
+
+@app.get("/api/social/following/{user_id}")
+def get_social_following(user_id: str, viewer_id: str = ""):
+    conn = get_db()
+    rows = conn.execute("SELECT following_id AS uid FROM social_follows WHERE follower_id = ? ORDER BY id DESC LIMIT 500", (user_id,)).fetchall()
+    users = [p for r in rows if (p := _profile_payload(conn, r["uid"], viewer_id))]
+    conn.close()
+    return {"status": "success", "users": users}
+
+
+@app.get("/api/social/feed")
+def get_social_feed(user_id: str = "", following_only: bool = False):
+    conn = get_db()
+    if following_only and user_id:
+        rows = conn.execute("""SELECT p.*, CASE WHEN l.id IS NOT NULL THEN 1 ELSE 0 END AS liked
+            FROM community_posts p LEFT JOIN community_post_likes l ON p.id=l.post_id AND l.user_id=?
+            WHERE p.user_id IN (SELECT following_id FROM social_follows WHERE follower_id=?) OR p.user_id=?
+            ORDER BY p.id DESC LIMIT 100""", (user_id, user_id, user_id)).fetchall()
+    else:
+        rows = conn.execute("""SELECT p.*, CASE WHEN l.id IS NOT NULL THEN 1 ELSE 0 END AS liked
+            FROM community_posts p LEFT JOIN community_post_likes l ON p.id=l.post_id AND l.user_id=?
+            ORDER BY p.id DESC LIMIT 100""", (user_id,)).fetchall()
+    conn.close()
+    return {"status": "success", "posts": [dict(r) for r in rows]}
+
+
+@app.get("/api/social/messages/conversations/{user_id}")
+def get_message_conversations(user_id: str):
+    conn = get_db()
+    rows = conn.execute("""SELECT m.* FROM direct_messages m
+        JOIN (SELECT MAX(id) AS latest_id FROM direct_messages WHERE sender_id=? OR recipient_id=? GROUP BY CASE WHEN sender_id=? THEN recipient_id ELSE sender_id END) x ON x.latest_id=m.id
+        ORDER BY m.id DESC LIMIT 100""", (user_id, user_id, user_id)).fetchall()
+    conversations = []
+    seen = set()
+    for row in rows:
+        other_id = row["recipient_id"] if row["sender_id"] == user_id else row["sender_id"]
+        if other_id in seen: continue
+        seen.add(other_id)
+        profile = _profile_payload(conn, other_id, user_id)
+        conversations.append({"user_id": other_id, "username": profile["username"] if profile else row["sender_name"], "avatar_url": profile["avatar_url"] if profile else "", "last_message": row["body"] or ("📷 Photo" if row["media_type"].startswith("image/") else "🎥 Video"), "last_media_url": row["media_url"], "created_at": row["created_at"], "unread": 0})
+    conn.close()
+    return {"status": "success", "conversations": conversations}
+
+
+@app.get("/api/social/messages/{user_id}/{other_id}")
+def get_direct_messages(user_id: str, other_id: str, after_id: int = 0):
+    conn = get_db()
+    rows = conn.execute("""SELECT * FROM direct_messages WHERE ((sender_id=? AND recipient_id=?) OR (sender_id=? AND recipient_id=?)) AND id>? ORDER BY id ASC LIMIT 300""", (user_id, other_id, other_id, user_id, after_id)).fetchall()
+    conn.execute("UPDATE direct_messages SET read_at=? WHERE sender_id=? AND recipient_id=? AND read_at=''", (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), other_id, user_id))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "messages": [dict(r) for r in rows]}
+
+
+@app.post("/api/social/messages")
+def send_direct_message(data: DirectMessageCreate):
+    sender_id = data.sender_id.strip()[:100]
+    recipient_id = data.recipient_id.strip()[:100]
+    body = data.body.strip()[:4000]
+    media_url = data.media_url.strip()[:500]
+    media_type = data.media_type.strip()[:80]
+    if not sender_id or not recipient_id or sender_id == recipient_id:
+        raise HTTPException(status_code=400, detail="Message recipient invalid")
+    if not body and not media_url:
+        raise HTTPException(status_code=400, detail="Message text ya photo/video bhejo")
+    if not conn_profile_exists(recipient_id):
+        raise HTTPException(status_code=404, detail="Recipient profile nahi mila")
+    conn = get_db()
+    _ensure_social_profile(conn, sender_id, data.sender_name)
+    cursor = conn.execute("INSERT INTO direct_messages (sender_id, sender_name, recipient_id, body, media_url, media_type, created_at, read_at) VALUES (?, ?, ?, ?, ?, ?, ?, '')", (sender_id, data.sender_name.strip()[:30] or "Elvish Fan", recipient_id, body, media_url, media_type, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
+    row = conn.execute("SELECT * FROM direct_messages WHERE id=?", (cursor.lastrowid,)).fetchone()
+    conn.close()
+    return {"status": "success", "message": dict(row)}
+
+
+def conn_profile_exists(user_id: str) -> bool:
+    conn = get_db()
+    exists = bool(conn.execute("SELECT id FROM social_profiles WHERE user_id=?", (user_id,)).fetchone())
+    conn.close()
+    return exists
+
+
+@app.post("/api/social/report")
+def report_social_content(data: SocialReportCreate):
+    reason = data.reason.strip()[:500]
+    target_type = data.target_type.strip()[:30]
+    if not data.reporter_id.strip() or not data.target_id.strip() or not reason:
+        raise HTTPException(status_code=400, detail="Report details incomplete")
+    conn = get_db()
+    conn.execute("INSERT INTO social_reports (reporter_id, target_type, target_id, reason, created_at) VALUES (?, ?, ?, ?, ?)", (data.reporter_id.strip()[:100], target_type, data.target_id.strip()[:100], reason, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": "Report received. Thank you."}
