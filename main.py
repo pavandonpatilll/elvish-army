@@ -2478,3 +2478,298 @@ def report_social_content(data: SocialReportCreate):
     conn.commit()
     conn.close()
     return {"status": "success", "message": "Report received. Thank you."}
+
+
+
+# =========================================================
+# ELVISH ARMY VIP PREMIUM — RAZORPAY SUBSCRIPTIONS
+# Add this section at the END of main.py
+# =========================================================
+
+import hashlib
+import hmac
+import urllib.request
+import urllib.error
+from datetime import datetime, timezone
+
+
+def premium_db():
+    conn = sqlite3.connect(DB_NAME, timeout=30)
+    conn.row_factory = sqlite3.Row
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS premium_subscriptions (
+            user_id TEXT PRIMARY KEY,
+            subscription_id TEXT UNIQUE,
+            status TEXT NOT NULL DEFAULT 'created',
+            payment_id TEXT,
+            updated_at TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    return conn
+
+
+def premium_now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def razorpay_setting(name):
+    return os.getenv(name, "").strip()
+
+
+def razorpay_api(method, endpoint, payload=None):
+    key_id = razorpay_setting("RAZORPAY_KEY_ID")
+    key_secret = razorpay_setting("RAZORPAY_KEY_SECRET")
+
+    if not key_id or not key_secret:
+        raise HTTPException(
+            status_code=503,
+            detail="Razorpay keys Render Environment mein configure nahi hain."
+        )
+
+    raw = json.dumps(payload or {}).encode("utf-8")
+    auth = base64.b64encode(
+        f"{key_id}:{key_secret}".encode("utf-8")
+    ).decode("ascii")
+
+    request = urllib.request.Request(
+        "https://api.razorpay.com/v1/" + endpoint.lstrip("/"),
+        data=raw if method.upper() != "GET" else None,
+        method=method.upper(),
+        headers={
+            "Authorization": "Basic " + auth,
+            "Content-Type": "application/json"
+        }
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        logger.error("Razorpay API error: %s", detail[:1000])
+        raise HTTPException(
+            status_code=502,
+            detail="Razorpay request fail hui. Plan ID aur API settings check karein."
+        )
+    except Exception as exc:
+        logger.exception("Razorpay connection error")
+        raise HTTPException(
+            status_code=502,
+            detail="Razorpay se connect nahi ho paya. Thodi der baad try karein."
+        )
+
+
+@app.post("/api/premium/create-subscription")
+async def premium_create_subscription(request: Request):
+    body = await request.json()
+    user_id = str(body.get("user_id", "")).strip()
+
+    if not user_id or len(user_id) > 200:
+        raise HTTPException(status_code=400, detail="Valid user_id required.")
+
+    plan_id = razorpay_setting("RAZORPAY_PLAN_ID")
+    if not plan_id:
+        raise HTTPException(
+            status_code=503,
+            detail="RAZORPAY_PLAN_ID Render Environment mein set karein."
+        )
+
+    conn = premium_db()
+    try:
+        existing = conn.execute(
+            "SELECT subscription_id, status FROM premium_subscriptions WHERE user_id=?",
+            (user_id,)
+        ).fetchone()
+
+        if existing and existing["status"] == "active":
+            return {
+                "is_premium": True,
+                "status": "active"
+            }
+
+        # Reuse an existing subscription that is still in checkout/created state.
+        if existing and existing["subscription_id"] and existing["status"] == "created":
+            return {
+                "subscription_id": existing["subscription_id"],
+                "key_id": razorpay_setting("RAZORPAY_KEY_ID"),
+                "status": "created"
+            }
+
+        subscription = razorpay_api("POST", "/subscriptions", {
+            "plan_id": plan_id,
+            "total_count": 120,
+            "quantity": 1,
+            "customer_notify": 1,
+            "notes": {
+                "user_id": user_id,
+                "app": "elvish_army"
+            }
+        })
+
+        subscription_id = subscription.get("id")
+        if not subscription_id:
+            raise HTTPException(
+                status_code=502,
+                detail="Razorpay ne subscription ID return nahi ki."
+            )
+
+        conn.execute("""
+            INSERT INTO premium_subscriptions
+                (user_id, subscription_id, status, payment_id, updated_at)
+            VALUES (?, ?, 'created', NULL, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                subscription_id=excluded.subscription_id,
+                status='created',
+                payment_id=NULL,
+                updated_at=excluded.updated_at
+        """, (user_id, subscription_id, premium_now()))
+        conn.commit()
+
+        return {
+            "subscription_id": subscription_id,
+            "key_id": razorpay_setting("RAZORPAY_KEY_ID"),
+            "status": "created"
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/api/premium/verify")
+async def premium_verify_payment(request: Request):
+    body = await request.json()
+
+    user_id = str(body.get("user_id", "")).strip()
+    payment_id = str(body.get("razorpay_payment_id", "")).strip()
+    subscription_id = str(body.get("razorpay_subscription_id", "")).strip()
+    signature = str(body.get("razorpay_signature", "")).strip()
+    secret = razorpay_setting("RAZORPAY_KEY_SECRET")
+
+    if not all([user_id, payment_id, subscription_id, signature, secret]):
+        raise HTTPException(status_code=400, detail="Payment verification data incomplete.")
+
+    conn = premium_db()
+    try:
+        row = conn.execute("""
+            SELECT user_id FROM premium_subscriptions
+            WHERE user_id=? AND subscription_id=?
+        """, (user_id, subscription_id)).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=400, detail="Subscription record match nahi hua.")
+
+        signed_data = f"{subscription_id}|{payment_id}".encode("utf-8")
+        expected = hmac.new(
+            secret.encode("utf-8"),
+            signed_data,
+            hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(expected, signature):
+            raise HTTPException(status_code=400, detail="Payment signature invalid.")
+
+        # Razorpay checkout signature verified. Webhook events continue
+        # to synchronize later renewals/cancellations.
+        conn.execute("""
+            UPDATE premium_subscriptions
+            SET status='active', payment_id=?, updated_at=?
+            WHERE user_id=? AND subscription_id=?
+        """, (payment_id, premium_now(), user_id, subscription_id))
+        conn.commit()
+
+        return {"ok": True, "is_premium": True, "status": "active"}
+    finally:
+        conn.close()
+
+
+@app.get("/api/premium/status")
+async def premium_status(user_id: str):
+    user_id = user_id.strip()
+    if not user_id or len(user_id) > 200:
+        raise HTTPException(status_code=400, detail="Valid user_id required.")
+
+    conn = premium_db()
+    try:
+        row = conn.execute("""
+            SELECT status, updated_at FROM premium_subscriptions WHERE user_id=?
+        """, (user_id,)).fetchone()
+
+        status = row["status"] if row else "inactive"
+        return {
+            "is_premium": status == "active",
+            "status": status,
+            "updated_at": row["updated_at"] if row else None
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/api/premium/webhook")
+async def premium_razorpay_webhook(request: Request):
+    webhook_secret = razorpay_setting("RAZORPAY_WEBHOOK_SECRET")
+    signature = request.headers.get("X-Razorpay-Signature", "")
+
+    if not webhook_secret or not signature:
+        raise HTTPException(status_code=400, detail="Webhook signature missing.")
+
+    raw_body = await request.body()
+    expected = hmac.new(
+        webhook_secret.encode("utf-8"),
+        raw_body,
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, signature):
+        raise HTTPException(status_code=400, detail="Invalid webhook signature.")
+
+    try:
+        event_data = json.loads(raw_body.decode("utf-8"))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid webhook JSON.")
+
+    event = event_data.get("event", "")
+    entity = (
+        event_data.get("payload", {})
+        .get("subscription", {})
+        .get("entity", {})
+    )
+    subscription_id = str(entity.get("id", "")).strip()
+    notes = entity.get("notes") or {}
+    user_id = str(notes.get("user_id", "")).strip()
+
+    status_map = {
+        "subscription.activated": "active",
+        "subscription.charged": "active",
+        "subscription.authenticated": "active",
+        "subscription.cancelled": "cancelled",
+        "subscription.halted": "halted",
+        "subscription.completed": "completed",
+        "subscription.expired": "expired"
+    }
+
+    new_status = status_map.get(event)
+    if not new_status or not subscription_id:
+        return {"ok": True, "ignored": True}
+
+    conn = premium_db()
+    try:
+        # Prefer subscription ID lookup; use notes user ID only as a fallback.
+        row = conn.execute(
+            "SELECT user_id FROM premium_subscriptions WHERE subscription_id=?",
+            (subscription_id,)
+        ).fetchone()
+
+        if row:
+            user_id = row["user_id"]
+
+        if user_id:
+            conn.execute("""
+                UPDATE premium_subscriptions
+                SET status=?, updated_at=?
+                WHERE user_id=? AND subscription_id=?
+            """, (new_status, premium_now(), user_id, subscription_id))
+            conn.commit()
+    finally:
+        conn.close()
+
+    return {"ok": True}
