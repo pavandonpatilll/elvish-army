@@ -2682,26 +2682,87 @@ async def premium_verify_payment(request: Request):
         conn.close()
 
 
+
 @app.get("/api/premium/status")
-async def premium_status(user_id: str):
-    user_id = user_id.strip()
-    if not user_id or len(user_id) > 200:
-        raise HTTPException(status_code=400, detail="Valid user_id required.")
+@app.get("/api/premium/status/{user_id}")
+def premium_status(user_id: str = ""):
+    user_id = (user_id or "").strip()
 
-    conn = premium_db()
-    try:
-        row = conn.execute("""
-            SELECT status, updated_at FROM premium_subscriptions WHERE user_id=?
-        """, (user_id,)).fetchone()
+    if not user_id or len(user_id) > 160:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
 
-        status = row["status"] if row else "inactive"
+    conn = get_db()
+    row = conn.execute(
+        """
+        SELECT *
+        FROM premium_subscriptions
+        WHERE user_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (user_id,)
+    ).fetchone()
+    conn.close()
+
+    if not row:
         return {
-            "is_premium": status == "active",
-            "status": status,
-            "updated_at": row["updated_at"] if row else None
+            "is_premium": False,
+            "status": "inactive",
+            "current_end": 0,
+            "subscription_id": None
         }
-    finally:
-        conn.close()
+
+    subscription_id = str(row["razorpay_subscription_id"] or "").strip()
+
+    if not subscription_id:
+        raise HTTPException(
+            status_code=409,
+            detail="Subscription ID missing for this app profile"
+        )
+
+    # Verify the saved subscription directly with Razorpay.
+    # Never activate VIP based only on a browser-provided status.
+    remote = razorpay_request(
+        "GET",
+        "subscriptions/" + subscription_id
+    )
+
+    remote_status = str(remote.get("status", "pending")).lower()
+
+    now = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+
+    current_start = int(remote.get("current_start") or 0)
+    current_end = int(remote.get("current_end") or 0)
+
+    conn = get_db()
+    conn.execute(
+        """
+        UPDATE premium_subscriptions
+        SET status = ?,
+            current_start = ?,
+            current_end = ?,
+            updated_at = ?
+        WHERE user_id = ?
+          AND razorpay_subscription_id = ?
+        """,
+        (
+            remote_status,
+            current_start,
+            current_end,
+            now,
+            user_id,
+            subscription_id
+        )
+    )
+    conn.commit()
+    conn.close()
+
+    return {
+        "is_premium": remote_status == "active",
+        "status": remote_status,
+        "current_end": current_end,
+        "subscription_id": subscription_id
+    }
 
 
 @app.post("/api/premium/webhook")
