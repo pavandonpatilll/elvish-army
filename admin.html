@@ -52,7 +52,9 @@ button:disabled{opacity:.5;cursor:not-allowed}.login{max-width:430px;margin:55px
 
   <div class="tabs">
     <div class="tab active" onclick="showTab('dashboard',this)">📊 Dashboard</div>
-<div class="tab" onclick="showTab('updates',this)">🔥 Updates</div>
+    <div class="tab" onclick="showTab('news',this)">📰 News</div>
+    <div class="tab" onclick="showTab('videos',this)">🎬 Videos</div>
+    <div class="tab" onclick="showTab('updates',this)">🔥 Updates</div>
     <div class="tab" onclick="showTab('polls',this)">🗳️ Polls</div>
     <div class="tab" onclick="showTab('community',this)">👥 Community</div>
     <div class="tab" onclick="showTab('notifications',this)">🔔 Notifications</div>
@@ -64,7 +66,25 @@ button:disabled{opacity:.5;cursor:not-allowed}.login{max-width:430px;margin:55px
     <div id="dashboardStats" class="stats" style="margin-top:15px"><div class="loading">Loading...</div></div>
     <div class="actions"><button class="secondary" onclick="loadDashboard()">🔄 Refresh Stats</button></div>
   </section>
-<section id="updates" class="card panel">
+
+  <section id="news" class="card panel">
+    <h2>📰 News</h2>
+    <input id="newsTitle" placeholder="News title">
+    <textarea id="newsDescription2" placeholder="Detailed news description"></textarea>
+    <button class="primary" onclick="addNews()">ADD NEWS</button>
+    <div id="newsList"></div>
+  </section>
+
+  <section id="videos" class="card panel">
+    <h2>🎬 Videos / Reels</h2>
+    <input id="videoTitle" placeholder="Video title">
+    <input id="videoUrl" placeholder="YouTube / Shorts / direct video URL">
+    <input id="videoThumbnail" placeholder="Thumbnail URL (optional)">
+    <button class="primary" onclick="addVideo()">ADD VIDEO</button>
+    <div id="videoList"></div>
+  </section>
+
+  <section id="updates" class="card panel">
     <h2>🔥 Updates</h2>
     <input id="updateTitle" placeholder="Update title">
     <textarea id="updateDescription" placeholder="Write update..."></textarea>
@@ -148,10 +168,20 @@ async function checkFirebase(){
     el.style.color='#ff7777';
   }
 }
-async function loadAll(){await Promise.allSettled([checkFirebase(),loadDashboard(),loadUpdates(),loadPolls(),loadCommunity(),loadNotifications(),loadPhotos()])}
+async function loadAll(){await Promise.allSettled([checkFirebase(),loadDashboard(),loadNews(),loadVideos(),loadUpdates(),loadPolls(),loadCommunity(),loadNotifications(),loadPhotos()])}
 function fail(id,e){document.getElementById(id).innerHTML='<div class="error">'+esc(e.message)+'</div>'}
 
-async function loadDashboard(){try{const d=await api('/api/admin/dashboard'),s=d.stats||{};const labels=[['👤','Users',s.users],['👁️','Views',s.views],['🔥','Updates',s.updates],['📸','Photos',s.photos],['🗳️','Polls',s.polls],['👥','Community',s.community_posts],['🔔','Notifications',s.notifications]];document.getElementById('dashboardStats').innerHTML=labels.map(x=>`<div class="stat">${x[0]} ${x[1]}<b>${x[2]??0}</b></div>`).join('')}catch(e){fail('dashboardStats',e)}}
+async function loadDashboard(){try{const d=await api('/api/admin/dashboard'),s=d.stats||{};const labels=[['👤','Users',s.users],['👁️','Views',s.views],['🔥','Updates',s.updates],['📰','News',s.news],['🎬','Videos',s.videos],['📸','Photos',s.photos],['🗳️','Polls',s.polls],['👥','Community',s.community_posts],['🔔','Notifications',s.notifications]];document.getElementById('dashboardStats').innerHTML=labels.map(x=>`<div class="stat">${x[0]} ${x[1]}<b>${x[2]??0}</b></div>`).join('')}catch(e){fail('dashboardStats',e)}}
+
+async function addNews(){const title=document.getElementById('newsTitle').value.trim(),description=document.getElementById('newsDescription2').value.trim();if(!title||!description)return alert('News details bhar bhai.');try{await api('/api/news',{method:'POST',headers:headers(),body:JSON.stringify({title,description})});document.getElementById('newsTitle').value='';document.getElementById('newsDescription2').value='';toast('News added 📰');loadNews();loadDashboard()}catch(e){alert(e.message)}}
+async function loadNews(){try{const d=await api('/api/news');document.getElementById('newsList').innerHTML=(d.news||[]).map(x=>`<div class="item"><h3>${esc(x.title)}</h3><small>${esc(x.date)}</small><p>${esc(x.description)}</p><div class="actions"><button class="secondary" onclick="editNews(${x.id})">✏️ Edit</button><button class="danger" onclick="deleteNews(${x.id})">🗑️ Delete</button></div></div>`).join('')||'<div class="loading">No news yet.</div>'}catch(e){fail('newsList',e)}}
+async function editNews(id){const title=prompt('New title:');if(title===null)return;const description=prompt('New description:');if(description===null)return;try{await api('/api/news/'+id,{method:'PUT',headers:headers(),body:JSON.stringify({title,description})});toast('News updated');loadNews()}catch(e){alert(e.message)}}
+async function deleteNews(id){if(!confirm('Delete this news?'))return;try{await api('/api/news/'+id,{method:'DELETE'});toast('News deleted');loadNews();loadDashboard()}catch(e){alert(e.message)}}
+
+async function addVideo(){const title=document.getElementById('videoTitle').value.trim(),url=document.getElementById('videoUrl').value.trim(),thumbnail=document.getElementById('videoThumbnail').value.trim();if(!title||!url)return alert('Video details bhar bhai.');try{await api('/api/videos',{method:'POST',headers:headers(),body:JSON.stringify({title,url,thumbnail})});['videoTitle','videoUrl','videoThumbnail'].forEach(id=>document.getElementById(id).value='');toast('Video added 🎬');loadVideos();loadDashboard()}catch(e){alert(e.message)}}
+function videoPreview(x){if(x.thumbnail)return `<img class="media" src="${esc(x.thumbnail)}" onerror="this.style.display='none'">`;if(/\.(mp4|webm|mov)(\?|$)/i.test(x.url))return `<video class="media" src="${esc(x.url)}" controls playsinline></video>`;return ''}
+async function loadVideos(){try{const d=await api('/api/videos');document.getElementById('videoList').innerHTML=(d.videos||[]).map(x=>`<div class="item"><h3>${esc(x.title)}</h3>${videoPreview(x)}<div class="url">${esc(x.url)}</div><div class="actions"><button class="danger" onclick="deleteVideo(${x.id})">🗑️ Delete</button></div></div>`).join('')||'<div class="loading">No videos yet.</div>'}catch(e){fail('videoList',e)}}
+async function deleteVideo(id){if(!confirm('Delete this video?'))return;try{await api('/api/videos/'+id,{method:'DELETE'});toast('Video deleted');loadVideos();loadDashboard()}catch(e){alert(e.message)}}
 
 async function addUpdate(){const title=document.getElementById('updateTitle').value.trim(),description=document.getElementById('updateDescription').value.trim();if(!title||!description)return alert('Update details bhar bhai.');try{await api('/api/updates',{method:'POST',headers:headers(),body:JSON.stringify({title,description})});document.getElementById('updateTitle').value='';document.getElementById('updateDescription').value='';toast('Update published 🔥');loadUpdates();loadDashboard()}catch(e){alert(e.message)}}
 async function loadUpdates(){try{const d=await api('/api/updates');document.getElementById('updateList').innerHTML=(d.updates||[]).map(x=>`<div class="item"><h3>${esc(x.title)}</h3><small>${esc(x.time)}</small><p>${esc(x.description)}</p><div class="actions"><button class="danger" onclick="deleteUpdate(${x.id})">🗑️ Delete</button></div></div>`).join('')||'<div class="loading">No updates yet.</div>'}catch(e){fail('updateList',e)}}

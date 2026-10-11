@@ -932,8 +932,221 @@ def check_admin_token(authorization):
     check_admin(token)
 
 
-# Dedicated News and curated Videos/Reels endpoints were removed for the community-only version.
-# Existing database tables are intentionally retained; no stored records are deleted.
+# =====================================================
+# NEWS
+# =====================================================
+
+@app.get("/api/news")
+def get_news():
+
+    conn = get_db()
+
+    rows = conn.execute("""
+        SELECT *
+        FROM news
+        ORDER BY id DESC
+    """).fetchall()
+
+    conn.close()
+
+    return {
+        "status": "success",
+        "news": [dict(row) for row in rows]
+    }
+
+
+@app.post("/api/news")
+def add_news(
+    news: NewsCreate,
+    authorization: str | None = Header(default=None)
+):
+
+    check_admin_token(authorization)
+
+    conn = get_db()
+
+    cursor = conn.execute("""
+        INSERT INTO news
+        (title, description, date)
+        VALUES (?, ?, ?)
+    """, (
+        news.title,
+        news.description,
+        datetime.now().strftime("%Y-%m-%d")
+    ))
+
+    conn.commit()
+
+    news_id = cursor.lastrowid
+
+    conn.close()
+
+    return {
+        "status": "success",
+        "message": "News added 📰",
+        "id": news_id
+    }
+
+
+@app.put("/api/news/{news_id}")
+def edit_news(
+    news_id: int,
+    news: NewsCreate,
+    authorization: str | None = Header(default=None)
+):
+
+    check_admin_token(authorization)
+
+    conn = get_db()
+
+    cursor = conn.execute("""
+        UPDATE news
+        SET title = ?, description = ?
+        WHERE id = ?
+    """, (
+        news.title,
+        news.description,
+        news_id
+    ))
+
+    conn.commit()
+
+    updated = cursor.rowcount
+
+    conn.close()
+
+    if updated == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="News not found"
+        )
+
+    return {
+        "status": "success",
+        "message": "News updated"
+    }
+
+
+@app.delete("/api/news/{news_id}")
+def delete_news(
+    news_id: int,
+    authorization: str | None = Header(default=None)
+):
+
+    check_admin_token(authorization)
+
+    conn = get_db()
+
+    cursor = conn.execute(
+        "DELETE FROM news WHERE id = ?",
+        (news_id,)
+    )
+
+    conn.commit()
+
+    deleted = cursor.rowcount
+
+    conn.close()
+
+    if deleted == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="News not found"
+        )
+
+    return {
+        "status": "success",
+        "message": "News deleted"
+    }
+
+
+# =====================================================
+# VIDEOS
+# =====================================================
+
+@app.get("/api/videos")
+def get_videos():
+
+    conn = get_db()
+
+    rows = conn.execute("""
+        SELECT *
+        FROM videos
+        ORDER BY id DESC
+    """).fetchall()
+
+    conn.close()
+
+    return {
+        "status": "success",
+        "videos": [dict(row) for row in rows]
+    }
+
+
+@app.post("/api/videos")
+def add_video(
+    video: VideoCreate,
+    authorization: str | None = Header(default=None)
+):
+
+    check_admin_token(authorization)
+
+    conn = get_db()
+
+    cursor = conn.execute("""
+        INSERT INTO videos
+        (title, url, thumbnail)
+        VALUES (?, ?, ?)
+    """, (
+        video.title,
+        video.url,
+        video.thumbnail
+    ))
+
+    conn.commit()
+
+    video_id = cursor.lastrowid
+
+    conn.close()
+
+    return {
+        "status": "success",
+        "message": "Video added 🎬",
+        "id": video_id
+    }
+
+
+@app.delete("/api/videos/{video_id}")
+def delete_video(
+    video_id: int,
+    authorization: str | None = Header(default=None)
+):
+
+    check_admin_token(authorization)
+
+    conn = get_db()
+
+    cursor = conn.execute(
+        "DELETE FROM videos WHERE id = ?",
+        (video_id,)
+    )
+
+    conn.commit()
+
+    deleted = cursor.rowcount
+
+    conn.close()
+
+    if deleted == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Video not found"
+        )
+
+    return {
+        "status": "success",
+        "message": "Video deleted"
+    }
 
 
 # =====================================================
@@ -2469,45 +2682,88 @@ async def premium_verify_payment(request: Request):
         conn.close()
 
 
+
 @app.get("/api/premium/status")
 @app.get("/api/premium/status/{user_id}")
 def premium_status(user_id: str = ""):
     user_id = (user_id or "").strip()
 
-    if not user_id or len(user_id) > 200:
+    if not user_id or len(user_id) > 160:
         raise HTTPException(status_code=400, detail="Invalid user ID")
 
-    conn = premium_db()
-    try:
-        row = conn.execute(
-            """
-            SELECT user_id, subscription_id, status, payment_id, updated_at
-            FROM premium_subscriptions
-            WHERE user_id = ?
-            """,
-            (user_id,)
-        ).fetchone()
+    conn = get_db()
+    row = conn.execute(
+        """
+        SELECT *
+        FROM premium_subscriptions
+        WHERE user_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (user_id,)
+    ).fetchone()
+    conn.close()
 
-        if not row:
-            return {
-                "is_premium": False,
-                "status": "inactive",
-                "current_end": 0,
-                "subscription_id": None
-            }
-
-        status = str(row["status"] or "inactive").lower()
-        subscription_id = row["subscription_id"]
-
+    if not row:
         return {
-            "is_premium": status == "active",
-            "status": status,
+            "is_premium": False,
+            "status": "inactive",
             "current_end": 0,
-            "subscription_id": subscription_id
+            "subscription_id": None
         }
-    finally:
-        conn.close()
-        
+
+    subscription_id = str(row["razorpay_subscription_id"] or "").strip()
+
+    if not subscription_id:
+        raise HTTPException(
+            status_code=409,
+            detail="Subscription ID missing for this app profile"
+        )
+
+    # Verify the saved subscription directly with Razorpay.
+    # Never activate VIP based only on a browser-provided status.
+    remote = razorpay_request(
+        "GET",
+        "subscriptions/" + subscription_id
+    )
+
+    remote_status = str(remote.get("status", "pending")).lower()
+
+    now = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+
+    current_start = int(remote.get("current_start") or 0)
+    current_end = int(remote.get("current_end") or 0)
+
+    conn = get_db()
+    conn.execute(
+        """
+        UPDATE premium_subscriptions
+        SET status = ?,
+            current_start = ?,
+            current_end = ?,
+            updated_at = ?
+        WHERE user_id = ?
+          AND razorpay_subscription_id = ?
+        """,
+        (
+            remote_status,
+            current_start,
+            current_end,
+            now,
+            user_id,
+            subscription_id
+        )
+    )
+    conn.commit()
+    conn.close()
+
+    return {
+        "is_premium": remote_status == "active",
+        "status": remote_status,
+        "current_end": current_end,
+        "subscription_id": subscription_id
+    }
+
 
 @app.post("/api/premium/webhook")
 async def premium_razorpay_webhook(request: Request):
