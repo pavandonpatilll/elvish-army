@@ -4104,69 +4104,27 @@ startApp();
 
 
 
-<!-- ELVISH ARMY VIP PREMIUM: ADD BEFORE </body> -->
+<!-- ELVISH ARMY VIP / GOOGLE PLAY BILLING BRIDGE -->
 <style>
-.ea-vip-launch{
-  border:1px solid #ffd36a;border-radius:12px;padding:10px 13px;
-  background:linear-gradient(120deg,#f5b400,#ff438c);
-  color:#160d19;font-weight:900;cursor:pointer;white-space:nowrap;
-  box-shadow:0 5px 22px #f5b40030
-}
-.ea-vip-overlay{
-  display:none;position:fixed;inset:0;z-index:999999;
-  background:#080610d9;backdrop-filter:blur(12px);
-  align-items:center;justify-content:center;padding:16px
-}
+.ea-vip-launch{border:1px solid #ffd36a;border-radius:12px;padding:10px 13px;background:linear-gradient(120deg,#f5b400,#ff438c);color:#160d19;font-weight:900;cursor:pointer;white-space:nowrap;box-shadow:0 5px 22px #f5b40030}
+.ea-vip-overlay{display:none;position:fixed;inset:0;z-index:999999;background:#080610d9;backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:16px}
 .ea-vip-overlay.open{display:flex}
-.ea-vip-modal{
-  width:min(430px,100%);max-height:90dvh;overflow:auto;
-  padding:22px;border-radius:25px;color:#fff;
-  background:linear-gradient(145deg,#21132f,#100d1b 70%);
-  border:1px solid #f5b40080;box-shadow:0 20px 70px #000b;
-  position:relative
-}
-.ea-vip-close{
-  position:absolute;right:14px;top:14px;width:36px;height:36px;
-  border:0;border-radius:50%;background:#ffffff16;color:#fff;
-  font-size:22px;cursor:pointer
-}
-.ea-vip-crown{
-  width:66px;height:66px;border-radius:22px;display:grid;
-  place-items:center;font-size:34px;
-  background:linear-gradient(135deg,#f5b400,#ff438c);
-  box-shadow:0 0 35px #f5b40030
-}
-.ea-vip-title{
-  margin-top:16px;font-size:25px;font-weight:950;letter-spacing:.4px;
-  background:linear-gradient(90deg,#ffe6a1,#f5b400,#ff75b5);
-  -webkit-background-clip:text;background-clip:text;color:transparent
-}
+.ea-vip-modal{width:min(430px,100%);max-height:90dvh;overflow:auto;padding:22px;border-radius:25px;color:#fff;background:linear-gradient(145deg,#21132f,#100d1b 70%);border:1px solid #f5b40080;box-shadow:0 20px 70px #000b;position:relative}
+.ea-vip-close{position:absolute;right:14px;top:14px;width:36px;height:36px;border:0;border-radius:50%;background:#ffffff16;color:#fff;font-size:22px;cursor:pointer}
+.ea-vip-crown{width:66px;height:66px;border-radius:22px;display:grid;place-items:center;font-size:34px;background:linear-gradient(135deg,#f5b400,#ff438c);box-shadow:0 0 35px #f5b40030}
+.ea-vip-title{margin-top:16px;font-size:25px;font-weight:950;letter-spacing:.4px;background:linear-gradient(90deg,#ffe6a1,#f5b400,#ff75b5);-webkit-background-clip:text;background-clip:text;color:transparent}
 .ea-vip-muted{color:#c2b8d0;font-size:13px;line-height:1.55}
 .ea-vip-price{font-size:39px;font-weight:950;margin:15px 0 3px}
 .ea-vip-price small{font-size:14px;color:#c2b8d0;font-weight:500}
-.ea-vip-feature{
-  padding:12px 10px;margin-top:9px;border:1px solid #ffffff12;
-  border-radius:13px;background:#ffffff07;font-size:14px
-}
-.ea-vip-pay{
-  width:100%;padding:15px;border:0;border-radius:14px;margin-top:17px;
-  background:linear-gradient(100deg,#f5b400,#ff5b9b);color:#180d1a;
-  font-weight:950;font-size:15px;cursor:pointer
-}
+.ea-vip-feature{padding:12px 10px;margin-top:9px;border:1px solid #ffffff12;border-radius:13px;background:#ffffff07;font-size:14px}
+.ea-vip-pay{width:100%;padding:15px;border:0;border-radius:14px;margin-top:17px;background:linear-gradient(100deg,#f5b400,#ff5b9b);color:#180d1a;font-weight:950;font-size:15px;cursor:pointer}
 .ea-vip-pay:disabled{opacity:.55;cursor:wait}
 .ea-vip-note{font-size:11px;color:#a99fb7;line-height:1.5;margin-top:12px}
-.ea-vip-status{font-size:13px;margin-top:12px;line-height:1.5}
-.ea-vip-status.error{color:#ff9a9a}
-.ea-vip-status.success{color:#8ff0b1}
-.ea-vip-badge{
-  display:inline-flex;align-items:center;gap:5px;padding:5px 9px;
-  border-radius:999px;background:linear-gradient(100deg,#f5b400,#ff9c54);
-  color:#241300;font-size:10px;font-weight:950;vertical-align:middle
-}
+.ea-vip-status{font-size:13px;margin-top:12px;line-height:1.5;color:#ddd}
+.ea-vip-status.error{color:#ff9a9a}.ea-vip-status.success{color:#8ff0b1}
+@media(max-width:420px){.ea-vip-modal{padding:19px}}
 </style>
-
-<div class="ea-vip-overlay" id="eaVipOverlay" role="dialog"
-     aria-modal="true" aria-label="Elvish Army VIP Premium">
+<div class="ea-vip-overlay" id="eaVipOverlay" role="dialog" aria-modal="true" aria-label="Elvish Army VIP Premium">
   <section class="ea-vip-modal">
     <button class="ea-vip-close" id="eaVipClose" aria-label="Close">×</button>
     <div class="ea-vip-crown">👑</div>
@@ -4174,210 +4132,68 @@ startApp();
     <p class="ea-vip-muted">ELVISH ARMY · Premium Fan Membership</p>
     <div class="ea-vip-price">₹15 <small>/ month</small></div>
     <p class="ea-vip-muted">Join the VIP side of the community.</p>
-
     <div class="ea-vip-feature">👑 Gold VIP profile badge and premium styling</div>
     <div class="ea-vip-feature">✨ Exclusive VIP theme accents</div>
     <div class="ea-vip-feature">🔥 Premium Fan Zone activities</div>
     <div class="ea-vip-feature">🎯 Special fan challenges and VIP identity</div>
-
-    <button class="ea-vip-pay" id="eaVipPay">👑 Get VIP — ₹15/month</button>
-    <div class="ea-vip-status" id="eaVipStatus" aria-live="polite"></div>
-    <p class="ea-vip-note">
-      Monthly subscription. Payment and membership are subject to successful
-      server verification and subscription status. Manage or cancel renewal
-      through the subscription provider. VIP does not promise personal access
-      to Elvish Yadav.
-    </p>
+    <button class="ea-vip-pay" id="eaVipPay" type="button">👑 Subscribe with Google Play</button>
+    <div class="ea-vip-status" id="eaVipStatus" aria-live="polite">Google Play subscription Android app integration ke baad available hogi.</div>
+    <p class="ea-vip-note">Subscription purchase must be completed through Google Play in the Android app. Membership activates only after secure server-side purchase verification. Product ID configured for the Android integration: <b>vip_legend_monthly</b>.</p>
   </section>
 </div>
-
 <script>
-(function () {
+(function(){
   "use strict";
-
-  const vipApi = "https://elvish-army-api.onrender.com";
-  const overlay = document.getElementById("eaVipOverlay");
-  const payButton = document.getElementById("eaVipPay");
-  const statusBox = document.getElementById("eaVipStatus");
-
-  function vipUserId() {
-    if (typeof getCommunityUserId === "function") {
-      return getCommunityUserId();
-    }
-    return localStorage.getItem("elvish_user_id") || "";
+  const overlay=document.getElementById("eaVipOverlay");
+  const payButton=document.getElementById("eaVipPay");
+  const statusBox=document.getElementById("eaVipStatus");
+  const PRODUCT_ID="vip_legend_monthly";
+  function showStatus(message,type){
+    statusBox.textContent=message;
+    statusBox.className="ea-vip-status"+(type?" "+type:"");
   }
-
-  function vipMessage(message, kind) {
-    statusBox.textContent = message;
-    statusBox.className = "ea-vip-status " + (kind || "");
+  function openVip(){overlay.classList.add("open");}
+  function closeVip(){overlay.classList.remove("open");}
+  document.getElementById("eaVipClose").addEventListener("click",closeVip);
+  overlay.addEventListener("click",function(event){if(event.target===overlay)closeVip();});
+  document.addEventListener("keydown",function(event){if(event.key==="Escape")closeVip();});
+  const header=document.querySelector(".header");
+  if(header&&!document.getElementById("eaVipLaunch")){
+    const button=document.createElement("button");
+    button.id="eaVipLaunch";button.className="ea-vip-launch";
+    button.type="button";button.textContent="👑 VIP";
+    button.addEventListener("click",openVip);
+    const notification=header.querySelector(".notification");
+    if(notification)header.insertBefore(button,notification);else header.appendChild(button);
   }
-
-  function openVip() {
-    overlay.classList.add("open");
-    refreshVipStatus();
-  }
-
-  function closeVip() {
-    overlay.classList.remove("open");
-  }
-
-  // Add a VIP entry point to the existing header without replacing it.
-  const header = document.querySelector(".header");
-  if (header && !document.getElementById("eaVipLaunch")) {
-    const button = document.createElement("button");
-    button.id = "eaVipLaunch";
-    button.className = "ea-vip-launch";
-    button.type = "button";
-    button.textContent = "👑 VIP";
-    button.addEventListener("click", openVip);
-    header.appendChild(button);
-  }
-
-  document.getElementById("eaVipClose").addEventListener("click", closeVip);
-
-  overlay.addEventListener("click", function (event) {
-    if (event.target === overlay) closeVip();
-  });
-
-  document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") closeVip();
-  });
-
-  async function vipRequest(path, body) {
-    const response = await fetch(vipApi + path, {
-      method: body ? "POST" : "GET",
-      headers: body ? { "Content-Type": "application/json" } : {},
-      body: body ? JSON.stringify(body) : undefined
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.detail || "Request failed. Please try again.");
-    }
-    return data;
-  }
-
-  async function refreshVipStatus() {
-    const userId = vipUserId();
-    if (!userId) {
-      vipMessage("Apni community profile pehle load karein.", "error");
-      return;
-    }
-
-    try {
-      const data = await vipRequest(
-        "/api/premium/status?user_id=" + encodeURIComponent(userId)
-      );
-
-      if (data.is_premium) {
-        payButton.textContent = "✓ VIP Membership Active";
-        payButton.disabled = true;
-        vipMessage("VIP status: " + (data.status || "active"), "success");
-      } else {
-        payButton.textContent = "👑 Get VIP — ₹15/month";
-        payButton.disabled = false;
-        vipMessage("Abhi aapki VIP membership active nahi hai.");
+  payButton.addEventListener("click",function(){
+    /* AndroidBilling must be implemented in MainActivity using Google Play Billing.
+       A webpage must never simulate a successful purchase or unlock VIP itself. */
+    const bridge=window.AndroidBilling;
+    if(bridge&&typeof bridge.purchaseSubscription==="function"){
+      payButton.disabled=true;
+      showStatus("Google Play purchase start ho raha hai…");
+      try{
+        bridge.purchaseSubscription(PRODUCT_ID);
+      }catch(error){
+        payButton.disabled=false;
+        showStatus("Google Play billing start nahi hua. App update karke dobara try karein.","error");
       }
-    } catch (error) {
-      payButton.disabled = false;
-      vipMessage(error.message, "error");
-    }
-  }
-
-  function loadRazorpay() {
-    return new Promise(function (resolve, reject) {
-      if (window.Razorpay) return resolve();
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = resolve;
-      script.onerror = function () {
-        reject(new Error("Razorpay checkout load nahi hua. Internet check karein."));
-      };
-      document.head.appendChild(script);
-    });
-  }
-
-  payButton.addEventListener("click", async function () {
-    const userId = vipUserId();
-
-    if (!userId) {
-      vipMessage("Pehle apni community profile load karein.", "error");
-      return;
-    }
-
-    payButton.disabled = true;
-    vipMessage("Razorpay subscription tayyar ho raha hai…");
-
-    try {
-      await loadRazorpay();
-
-      const created = await vipRequest("/api/premium/create-subscription", {
-        user_id: userId
-      });
-
-      if (!created.subscription_id || !created.key_id) {
-        throw new Error("Subscription details nahi mile. Server settings check karein.");
-      }
-
-      const checkout = new Razorpay({
-        key: created.key_id,
-        subscription_id: created.subscription_id,
-        name: "Elvish Army",
-        description: "VIP Legend — ₹15 monthly",
-        image: "",
-        theme: { color: "#f5b400" },
-
-        handler: async function (result) {
-          vipMessage("Payment verify ho raha hai…");
-
-          try {
-            const verified = await vipRequest("/api/premium/verify", {
-              user_id: userId,
-              razorpay_payment_id: result.razorpay_payment_id,
-              razorpay_subscription_id: result.razorpay_subscription_id,
-              razorpay_signature: result.razorpay_signature
-            });
-
-            if (verified.is_premium) {
-              payButton.textContent = "✓ VIP Membership Active";
-              payButton.disabled = true;
-              vipMessage("Payment verified! VIP membership active hai. 👑", "success");
-            } else {
-              vipMessage("Payment mila, lekin membership abhi confirm nahi hui. Thodi der baad status check karein.", "error");
-              payButton.disabled = false;
-            }
-          } catch (error) {
-            vipMessage("Verification complete nahi hui: " + error.message +
-              " Payment status Razorpay dashboard mein check karein.", "error");
-            payButton.disabled = false;
-          }
-        },
-
-        modal: {
-          ondismiss: function () {
-            payButton.disabled = false;
-            vipMessage("Checkout band hua. Agar payment ki hai, status dobara check karein.");
-            refreshVipStatus();
-          }
-        }
-      });
-
-      checkout.on("payment.failed", function () {
-        payButton.disabled = false;
-        vipMessage("Payment successful nahi hui. Dobara try karein.", "error");
-      });
-
-      checkout.open();
-    } catch (error) {
-      payButton.disabled = false;
-      vipMessage(error.message, "error");
+    }else{
+      showStatus("Google Play Billing abhi Android app mein connect nahi hai. MainActivity.java aur app-level build.gradle integrate karne ke baad purchase chalega.","error");
     }
   });
-
-  // Check status when the page loads.
-  refreshVipStatus();
+  window.addEventListener("playBillingResult",function(event){
+    payButton.disabled=false;
+    const detail=event.detail||{};
+    if(detail.status==="pending")showStatus("Purchase pending hai. Confirm hone ke baad VIP activate hoga.");
+    else if(detail.status==="success")showStatus("Purchase received. Server verification ke baad hi VIP activate hoga.","success");
+    else if(detail.status==="cancelled")showStatus("Purchase cancel ki gayi.");
+    else if(detail.message)showStatus(detail.message,"error");
+  });
 })();
 </script>
-<!-- END ELVISH ARMY VIP PREMIUM -->
+<!-- END ELVISH ARMY VIP / GOOGLE PLAY BILLING BRIDGE -->
 
 </body>
 </html>
