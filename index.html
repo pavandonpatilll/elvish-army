@@ -563,7 +563,7 @@
 
 
 /* ==================================================
-   SEPARATE APP PAGES + REELS
+   SEPARATE APP PAGES
 ================================================== */
 .page-view {
     display:none;
@@ -592,13 +592,13 @@
     font-size:21px;
 }
 
-.reels-feed {
+.retired-feed {
     display:flex;
     flex-direction:column;
     gap:18px;
 }
 
-.reel-card {
+.retired-card {
     position:relative;
     width:100%;
     height:min(78vh, 720px);
@@ -610,8 +610,8 @@
     box-shadow:0 15px 45px rgba(0,0,0,.35);
 }
 
-.reel-video,
-.reel-iframe {
+.retired-video,
+.retired-iframe {
     width:100%;
     height:100%;
     display:block;
@@ -620,7 +620,7 @@
     background:#000;
 }
 
-.reel-overlay {
+.retired-overlay {
     position:absolute;
     left:0; right:0; bottom:0;
     padding:55px 18px 18px;
@@ -628,20 +628,20 @@
     pointer-events:none;
 }
 
-.reel-title {
+.retired-title {
     font-size:18px;
     font-weight:800;
     color:#fff;
     text-shadow:0 2px 8px #000;
 }
 
-.reel-label {
+.retired-label {
     margin-top:6px;
     color:#ddd;
     font-size:12px;
 }
 
-.reel-open {
+.retired-open {
     pointer-events:auto;
     display:inline-block;
     margin-top:10px;
@@ -656,7 +656,7 @@
 
 @media (max-width:600px) {
     .page-view { padding-top:10px; }
-    .reel-card {
+    .retired-card {
         height:calc(100vh - 150px);
         min-height:480px;
         border-radius:18px;
@@ -712,11 +712,11 @@ button,.quick-item,.nav-item,.action,.page-back,.post-btn,.join-btn,.media-btn,.
 .nav-item{min-width:58px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .page-view{width:100%;box-sizing:border-box}.page-header{width:var(--ea-content);margin:0 auto;box-sizing:border-box}#pageContainer{width:var(--ea-content);margin-left:auto!important;margin-right:auto!important;padding-left:0;padding-right:0}
 .notification-modal{padding-top:calc(70px + env(safe-area-inset-top,0px))}.notification-panel{width:min(430px,100%)}
-.reel-card{width:100%;max-width:760px;margin:0 auto}
+.retired-card{width:100%;max-width:760px;margin:0 auto}
 @media (min-width:761px){body{background:radial-gradient(circle at 50% -10%,rgba(245,180,0,.08),transparent 35%),#080808}.hero{margin-top:22px}}
-@media (max-width:520px){:root{--ea-content:calc(100% - 20px)}.hero{border-radius:18px;margin-top:10px}.section{margin-top:20px}.quick-item{min-height:76px;border-radius:13px}.update-card,.community-create,.fan-zone-card{border-radius:15px}.reels-feed{gap:12px}.reel-card{border-radius:15px;height:calc(100dvh - 148px);min-height:440px}.notification-modal{padding-left:8px;padding-right:8px}}
+@media (max-width:520px){:root{--ea-content:calc(100% - 20px)}.hero{border-radius:18px;margin-top:10px}.section{margin-top:20px}.quick-item{min-height:76px;border-radius:13px}.update-card,.community-create,.fan-zone-card{border-radius:15px}.notification-modal{padding-left:8px;padding-right:8px}}
 @media (max-width:360px){:root{--ea-content:calc(100% - 14px)}.quick-menu{gap:5px}.quick-item{min-height:70px}.quick-item p{font-size:9px}.bottom-nav .nav-item{min-width:52px;font-size:10px}}
-.update-card,.quick-item,.reel-card,.community-create,.fan-zone-card{contain:layout paint}p,h1,h2,h3,h4,span,div{overflow-wrap:anywhere}
+.update-card,.quick-item,.community-create,.fan-zone-card{contain:layout paint}p,h1,h2,h3,h4,span,div{overflow-wrap:anywhere}
 
 
 /* ELVISH ARMY SOCIAL / INSTAGRAM-INSPIRED UI */
@@ -732,9 +732,9 @@ body{background:radial-gradient(ellipse at 10% 0%,rgba(134,87,255,.17),transpare
 .social-avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:17px;background-size:cover;background-position:center}
 .social-top{display:flex;align-items:center;gap:11px;min-width:0}.social-top .user-info{flex:1;min-width:0}.social-user-button{border:0;background:none;color:#fff;padding:0;text-align:left;font-weight:800;cursor:pointer}.social-muted{color:#aaa;font-size:12px}.social-pill{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--social-border);background:rgba(255,255,255,.05);border-radius:999px;padding:8px 11px;color:#eee;font-size:12px}
 .social-btn{border:0;border-radius:12px;padding:10px 14px;background:linear-gradient(110deg,var(--social-pink),var(--social-purple));color:white;font-weight:800;cursor:pointer;min-height:40px}.social-btn.secondary{background:rgba(255,255,255,.08);border:1px solid var(--social-border)}.social-btn.following{background:rgba(255,255,255,.08);border:1px solid var(--social-border)}
-.social-input,.social-textarea{width:100%;padding:13px 14px;border-radius:13px;border:1px solid var(--social-border);background:#100e19;color:#fff;outline:none}.social-input:focus,.social-textarea:focus{border-color:var(--social-pink)}.social-textarea{min-height:82px;resize:vertical}.social-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:13px}.social-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}.social-stat{border-radius:14px;padding:13px 6px;text-align:center;background:rgba(255,255,255,.05);border:1px solid var(--social-border);cursor:pointer}.social-stat b{display:block;font-size:20px}.social-stat span{font-size:11px;color:#aaa}.social-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:15px}.social-grid-item{aspect-ratio:1;overflow:hidden;background:#211b31;border-radius:8px;cursor:pointer;display:grid;place-items:center}.social-grid-item img,.social-grid-item video{width:100%;height:100%;object-fit:cover}.social-search-row{display:flex;gap:8px}.social-search-row input{flex:1;min-width:0}.social-user-row{display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid var(--social-border)}.social-user-row .social-top{flex:1}.social-message-row{display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;background:rgba(255,255,255,.04);margin-bottom:8px;cursor:pointer}.social-message-row:hover{background:rgba(255,255,255,.08)}.social-chat{height:min(65vh,620px);min-height:350px;display:flex;flex-direction:column}.social-chat-messages{flex:1;overflow-y:auto;padding:10px 0;display:flex;flex-direction:column;gap:8px}.social-bubble{max-width:82%;padding:10px 13px;border-radius:17px;background:#29223a;align-self:flex-start;word-break:break-word}.social-bubble.mine{align-self:flex-end;background:linear-gradient(135deg,#a345dd,#f04488)}.social-bubble img,.social-bubble video{display:block;max-width:100%;max-height:270px;border-radius:10px;margin-top:5px}.social-chat-compose{display:flex;gap:8px;align-items:center;padding-top:10px;border-top:1px solid var(--social-border)}.social-chat-compose input[type=text]{flex:1;min-width:0}.social-file-label{padding:11px;border-radius:12px;background:rgba(255,255,255,.08);cursor:pointer}.social-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:5px 0 14px}.social-empty{text-align:center;padding:32px 15px;color:#aaa}.social-reel-card{position:relative;height:min(76vh,720px);min-height:480px;background:#000;border-radius:18px;overflow:hidden;margin-bottom:14px}.social-reel-card video{width:100%;height:100%;object-fit:contain}.social-reel-caption{position:absolute;left:0;right:0;bottom:0;padding:65px 16px 18px;background:linear-gradient(transparent,rgba(0,0,0,.86));pointer-events:none}.social-reel-caption button{pointer-events:auto}
+.social-input,.social-textarea{width:100%;padding:13px 14px;border-radius:13px;border:1px solid var(--social-border);background:#100e19;color:#fff;outline:none}.social-input:focus,.social-textarea:focus{border-color:var(--social-pink)}.social-textarea{min-height:82px;resize:vertical}.social-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:13px}.social-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}.social-stat{border-radius:14px;padding:13px 6px;text-align:center;background:rgba(255,255,255,.05);border:1px solid var(--social-border);cursor:pointer}.social-stat b{display:block;font-size:20px}.social-stat span{font-size:11px;color:#aaa}.social-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:15px}.social-grid-item{aspect-ratio:1;overflow:hidden;background:#211b31;border-radius:8px;cursor:pointer;display:grid;place-items:center}.social-grid-item img,.social-grid-item video{width:100%;height:100%;object-fit:cover}.social-search-row{display:flex;gap:8px}.social-search-row input{flex:1;min-width:0}.social-user-row{display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid var(--social-border)}.social-user-row .social-top{flex:1}.social-message-row{display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;background:rgba(255,255,255,.04);margin-bottom:8px;cursor:pointer}.social-message-row:hover{background:rgba(255,255,255,.08)}.social-chat{height:min(65vh,620px);min-height:350px;display:flex;flex-direction:column}.social-chat-messages{flex:1;overflow-y:auto;padding:10px 0;display:flex;flex-direction:column;gap:8px}.social-bubble{max-width:82%;padding:10px 13px;border-radius:17px;background:#29223a;align-self:flex-start;word-break:break-word}.social-bubble.mine{align-self:flex-end;background:linear-gradient(135deg,#a345dd,#f04488)}.social-bubble img,.social-bubble video{display:block;max-width:100%;max-height:270px;border-radius:10px;margin-top:5px}.social-chat-compose{display:flex;gap:8px;align-items:center;padding-top:10px;border-top:1px solid var(--social-border)}.social-chat-compose input[type=text]{flex:1;min-width:0}.social-file-label{padding:11px;border-radius:12px;background:rgba(255,255,255,.08);cursor:pointer}.social-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:5px 0 14px}.social-empty{text-align:center;padding:32px 15px;color:#aaa}
 .bottom-nav{background:rgba(13,11,23,.96);border-top:1px solid var(--social-border)}.nav-item.active{color:#ff70b2}.nav-icon{filter:drop-shadow(0 0 8px rgba(255,63,135,.12))}
-@media(max-width:520px){.social-stat b{font-size:18px}.social-reel-card{height:calc(100dvh - 155px);min-height:430px}.social-user-row{gap:8px}.social-btn{padding:9px 11px}}
+@media(max-width:520px){.social-stat b{font-size:18px}.social-user-row{gap:8px}.social-btn{padding:9px 11px}}
 
 
 /* FINAL RESPONSIVE FIX — phones, foldables, tablets and desktop */
@@ -789,7 +789,7 @@ body {
 img, video, iframe, canvas { max-width: 100%; }
 input, textarea, select, button { max-width: 100%; }
 .social-chat { height: min(65dvh, 700px); }
-.social-reel-card, .reel-card { max-width: 100%; }
+
 @media (min-width: 700px) {
   .hero, .section, #pageContainer, .page-header { width: min(calc(100% - 40px), 1100px); }
   .quick-menu { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
@@ -806,7 +806,7 @@ input, textarea, select, button { max-width: 100%; }
 @media (orientation: landscape) and (max-height: 500px) {
   .bottom-nav { height: calc(54px + env(safe-area-inset-bottom, 0px)); }
   body { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
-  .social-reel-card, .reel-card { height: 78dvh; min-height: 260px; }
+
 }
 
 </style>
@@ -892,8 +892,8 @@ input, textarea, select, button { max-width: 100%; }
         </h1>
 
         <p>
-            Stay connected with the latest updates, videos,
-            news and fan community.
+            Stay connected with the Elvish Army fan community,
+            share moments, and connect with other fans.
         </p>
 
         <button class="join-btn" onclick="joinArmy()">
@@ -911,16 +911,6 @@ input, textarea, select, button { max-width: 100%; }
 
         <div class="quick-menu">
 
-            <div class="quick-item" onclick="openSection('News')">
-                <div class="icon">📰</div>
-                <p>News</p>
-            </div>
-
-            <div class="quick-item" onclick="openSection('Videos')">
-                <div class="icon">🎬</div>
-                <p>Videos</p>
-            </div>
-
             <div class="quick-item" onclick="openSection('Community')">
                 <div class="icon">👥</div>
                 <p>Community</p>
@@ -933,7 +923,7 @@ input, textarea, select, button { max-width: 100%; }
 
             <div class="quick-item" onclick="openSection('Quiz')">
                 <div class="icon">🧠</div>
-                <p>Quiz&earn</p>
+                <p>Quiz</p>
             </div>
 
             <div class="quick-item" onclick="openSection('Fan Zone')">
@@ -1062,8 +1052,7 @@ input, textarea, select, button { max-width: 100%; }
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="openSection('Home')"><div class="nav-icon">🏠</div>Home</div>
         <div class="nav-item" onclick="openSection('Search')"><div class="nav-icon">🔎</div>Search</div>
-        <div class="nav-item" onclick="openSection('Videos')"><div class="nav-icon">🎬</div>Reels</div>
-        <div class="nav-item" onclick="openSection('Community')"><div class="nav-icon">➕</div>Post</div>
+<div class="nav-item" onclick="openSection('Community')"><div class="nav-icon">➕</div>Post</div>
         <div class="nav-item" onclick="openSection('Inbox')"><div class="nav-icon">💬</div>Chat</div>
         <div class="nav-item" onclick="openSection('Profile')"><div class="nav-icon">👤</div>Profile</div>
     </nav>
@@ -1179,66 +1168,6 @@ async function loadUpdates() {
                 </p>
             </div>
         `;
-
-    }
-}
-
-
-// ==================================================
-// NEWS
-// ==================================================
-
-async function loadNews() {
-
-    try {
-
-        const response =
-            await fetch(`${API_URL}/api/news`);
-
-        if (!response.ok) {
-            throw new Error("News API Error");
-        }
-
-        const data =
-            await response.json();
-
-        return data.news || [];
-
-    } catch (error) {
-
-        console.error("News:", error);
-
-        return [];
-
-    }
-}
-
-
-// ==================================================
-// VIDEOS
-// ==================================================
-
-async function loadVideos() {
-
-    try {
-
-        const response =
-            await fetch(`${API_URL}/api/videos`);
-
-        if (!response.ok) {
-            throw new Error("Videos API Error");
-        }
-
-        const data =
-            await response.json();
-
-        return data.videos || [];
-
-    } catch (error) {
-
-        console.error("Videos:", error);
-
-        return [];
 
     }
 }
@@ -1484,111 +1413,6 @@ document.addEventListener(
 
 
 // ==================================================
-// NEWS SCREEN
-// ==================================================
-
-async function showNews() {
-
-    const news =
-        await loadNews();
-
-    const container =
-        document.getElementById("pageContainer");
-
-    container.innerHTML = "";
-
-    if (!news.length) {
-
-        container.innerHTML = `
-            <div class="update-card">
-                <p class="update-text">
-                    No news available yet 📰
-                </p>
-            </div>
-        `;
-
-        return;
-    }
-
-    news.forEach(item => {
-
-        container.innerHTML += `
-
-            <div class="update-card">
-
-                <div class="update-top">
-
-                    <div class="avatar">
-                        📰
-                    </div>
-
-                    <div class="user-info">
-
-                        <h3>
-                            ${escapeHTML(
-                                item.title ||
-                                item.headline ||
-                                "Latest News"
-                            )}
-                        </h3>
-
-                        <span>
-                            ${escapeHTML(
-                                item.time ||
-                                item.date ||
-                                "Today"
-                            )}
-                        </span>
-
-                    </div>
-
-                </div>
-
-                <p class="update-text">
-                    ${escapeHTML(
-                        item.description ||
-                        item.content ||
-                        ""
-                    )}
-                </p>
-
-            </div>
-
-        `;
-
-    });
-}
-
-
-// ==================================================
-// VIDEOS SCREEN
-// ==================================================
-
-async function showVideos() {
-    const container=document.getElementById('pageContainer');if(!container)return;
-    container.innerHTML='<div class="social-empty">Loading reels… 🎬</div>';
-    try{
-      const [adminData,communityData]=await Promise.all([
-        socialApi('/api/videos').catch(()=>({videos:[]})),
-        socialApi(`/api/community?user_id=${encodeURIComponent(socialUserId())}`).catch(()=>({posts:[]}))
-      ]);
-      const adminVideos=(adminData.videos||[]).map(v=>({id:'v'+v.id,title:v.title||'Elvish Army Reel',url:v.url,thumbnail:v.thumbnail||'',username:'Elvish Army',user_id:'',media_type:'video/mp4',created_at:''}));
-      const userReels=(communityData.posts||[]).filter(p=>String(p.media_type||'').startsWith('video/')&&p.media_url).map(p=>({id:'p'+p.id,title:p.content||'New reel',url:p.media_url,thumbnail:'',username:p.username,user_id:p.user_id,media_type:p.media_type,created_at:p.created_at,likes:p.likes}));
-      const reels=[...userReels,...adminVideos];
-      if(!reels.length){container.innerHTML='<div class="social-empty">No reels yet. Community mein pehla video share karo! 🎥<br><br><button class="social-btn" onclick="openSection(\'Community\')">Create reel +</button></div>';return;}
-      container.innerHTML=`<div class="social-section-title"><div><h2>🎬 Reels</h2><div class="social-muted">Scroll and discover fan videos</div></div><button class="social-btn" onclick="openSection('Community')">＋ Reel</button></div><div id="socialReels"></div>`;
-      const feed=document.getElementById('socialReels');
-      reels.forEach((r,i)=>{const url=socialMediaUrl(r.url||'');const isYT=/youtube\.com|youtu\.be/i.test(url);let media=isYT?`<div style="height:100%;display:grid;place-items:center"><button class="social-btn" onclick="openVideo('${escapeHTML(url)}')">▶ Open video</button></div>`:`<video src="${escapeHTML(url)}" controls playsinline preload="metadata" loop></video>`;feed.insertAdjacentHTML('beforeend',`<article class="social-reel-card">${media}<div class="social-reel-caption"><b>${escapeHTML(r.username||'Elvish Army')}</b><div style="margin-top:6px">${escapeHTML(r.title||'Reel')}</div><div class="social-actions"><button class="social-btn" onclick="${r.user_id?`openSocialProfile('${escapeHTML(r.user_id)}')`:`openVideo('${escapeHTML(url)}')`}">👤 Profile</button><button class="social-btn secondary" onclick="shareCommunityPost('${String(r.id).replace(/^p/,'') }')">↗ Share</button></div></div></article>`);});
-    }catch(e){container.innerHTML=`<div class="social-empty">Reels load nahi ho paye: ${escapeHTML(e.message)}</div>`;}
-}
-
-function openVideo(url) {
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
-}
-
-
-// ==================================================
 // PHOTOS REMOVED
 // ==================================================
 
@@ -1604,7 +1428,7 @@ async function showCommunity() {
     container.innerHTML = `
       <div class="social-section-title"><div><h2>✨ Your Community</h2><div class="social-muted">Share photos, videos and moments</div></div><button class="social-btn secondary" onclick="openSection('Search')">Find people</button></div>
       <div class="community-create">
-        <div class="social-top"><div class="social-avatar">${escapeHTML(name.slice(0,1).toUpperCase())}</div><div class="user-info"><b>${escapeHTML(name)}</b><div class="social-muted">Create a post or reel</div></div></div>
+        <div class="social-top"><div class="social-avatar">${escapeHTML(name.slice(0,1).toUpperCase())}</div><div class="user-info"><b>${escapeHTML(name)}</b><div class="social-muted">Create a community post</div></div></div>
         <textarea class="social-textarea" id="communityContent" placeholder="What's happening? Add a caption... ✨" maxlength="1000" style="margin-top:13px"></textarea>
         <div id="mediaPreview" class="media-preview"></div>
         <div class="social-actions">
@@ -1612,7 +1436,7 @@ async function showCommunity() {
           <label class="social-pill" style="cursor:pointer">🖼️ Gallery <input type="file" id="communityMedia" accept="image/*,video/*" onchange="previewCommunityMedia(this)" hidden></label>
           <button class="social-btn" style="margin-left:auto" onclick="createCommunityPost()">Share ✨</button>
         </div>
-        <div class="social-muted" style="margin-top:8px">Photos, short videos and captions supported.</div>
+        <div class="social-muted" style="margin-top:8px">Share a community caption and supported media.</div>
       </div>
       <div class="social-actions" style="margin:0 0 12px"><button class="social-btn" onclick="loadSocialFeed(false)">🌎 For you</button><button class="social-btn secondary" onclick="loadSocialFeed(true)">👥 Following</button></div>
       <div id="communityContainer"></div>`;
@@ -1647,18 +1471,6 @@ async function openSection(section, fromHistory=false) {
     homeSections.forEach(el => el.style.display = "none");
     if (pageView) pageView.style.display = "block";
     if (pageContainer) pageContainer.innerHTML = `<div class="update-card"><p class="update-text">Loading... 🔄</p></div>`;
-
-    if (section === "News") {
-        changePageTitle("📰 Latest News");
-        await showNews();
-        return;
-    }
-
-    if (section === "Videos") {
-        changePageTitle("🎬 Reels");
-        await showVideos();
-        return;
-    }
 
     if (section === "Community") {
         changePageTitle("✨ Create & Feed");
@@ -3845,10 +3657,6 @@ async function startApp() {
 
     await loadUpdates();
 
-    await loadNews();
-
-    await loadVideos();
-
     await loadNotifications();
 
     await loadPolls();
@@ -4171,7 +3979,7 @@ startApp();
     <button class="ea-vip-close" id="eaVipClose" aria-label="Close">×</button>
     <div class="ea-vip-crown">👑</div>
     <div class="ea-vip-title">VIP LEGEND</div>
-    <p class="ea-vip-muted">ELVISH ARMY · Premium Fan Membership</p>
+    <p class="ea-vip-muted">ELVISH ARMY · Optional Community Membership</p>
     <div class="ea-vip-price">₹15 <small>/ month</small></div>
     <p class="ea-vip-muted">Join the VIP side of the community.</p>
 
