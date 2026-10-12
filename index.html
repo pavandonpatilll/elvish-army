@@ -4152,7 +4152,40 @@ startApp();
     statusBox.textContent=message;
     statusBox.className="ea-vip-status"+(type?" "+type:"");
   }
-  function openVip(){overlay.classList.add("open");}
+  function vipUserId(){
+    if(typeof getCommunityUserId === "function") return String(getCommunityUserId() || "");
+    return String(localStorage.getItem("elvish_user_id") || "");
+  }
+  async function vipApiRequest(path, body){
+    const response = await fetch("https://elvish-army-api.onrender.com" + path, {
+      method: body ? "POST" : "GET",
+      headers: body ? {"Content-Type":"application/json"} : {},
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(data.detail || "VIP status check failed. Try again.");
+    return data;
+  }
+  async function refreshVipStatus(){
+    const userId = vipUserId();
+    if(!userId){ localStorage.setItem("elvish_vip_active","false"); return false; }
+    try{
+      const data = await vipApiRequest("/api/google-play/status/" + encodeURIComponent(userId));
+      const active = data.vip === true;
+      localStorage.setItem("elvish_vip_active", active ? "true" : "false");
+      if(active){
+        const expiry = data.expiry_time ? new Date(data.expiry_time).toLocaleDateString() : "";
+        showStatus("👑 VIP ACTIVE" + (expiry ? " · valid until " + expiry : "") + ". Subscription Google Play se verify hui.","success");
+      }
+      return active;
+    }catch(error){
+      // Do not grant VIP when the server cannot confirm the entitlement.
+      localStorage.setItem("elvish_vip_active","false");
+      showStatus("VIP status verify nahi ho saka. Internet/server setup check karke retry karein.","error");
+      return false;
+    }
+  }
+  function openVip(){overlay.classList.add("open");refreshVipStatus();}
   function closeVip(){overlay.classList.remove("open");}
   document.getElementById("eaVipClose").addEventListener("click",closeVip);
   overlay.addEventListener("click",function(event){if(event.target===overlay)closeVip();});
@@ -4183,14 +4216,55 @@ startApp();
       showStatus("Google Play Billing abhi Android app mein connect nahi hai. MainActivity.java aur app-level build.gradle integrate karne ke baad purchase chalega.","error");
     }
   });
-  window.addEventListener("playBillingResult",function(event){
-    payButton.disabled=false;
+  window.addEventListener("playBillingResult",async function(event){
     const detail=event.detail||{};
-    if(detail.status==="pending")showStatus("Purchase pending hai. Confirm hone ke baad VIP activate hoga.");
-    else if(detail.status==="success")showStatus("Purchase received. Server verification ke baad hi VIP activate hoga.","success");
-    else if(detail.status==="cancelled")showStatus("Purchase cancel ki gayi.");
-    else if(detail.message)showStatus(detail.message,"error");
+    if(detail.status==="pending"){
+      payButton.disabled=false;
+      showStatus("Purchase pending hai. Google Play confirm karega tab VIP activate hoga.");
+      return;
+    }
+    if(detail.status==="cancelled"){
+      payButton.disabled=false;
+      showStatus("Purchase cancel ki gayi.");
+      return;
+    }
+    if(detail.status==="success"){
+      const userId=vipUserId();
+      const token=String(detail.purchaseToken||"");
+      const productId=String(detail.productId||PRODUCT_ID);
+      if(!userId||!token||productId!==PRODUCT_ID){
+        payButton.disabled=false;
+        showStatus("Purchase token ya user ID missing hai. VIP unlock nahi kiya gaya.","error");
+        return;
+      }
+      payButton.disabled=true;
+      showStatus("Google Play purchase verify aur acknowledge ho raha hai…");
+      try{
+        const result=await vipApiRequest("/api/google-play/verify",{
+          user_id:userId,
+          purchase_token:token,
+          product_id:productId
+        });
+        if(result.vip===true){
+          localStorage.setItem("elvish_vip_active","true");
+          showStatus("👑 VIP ACTIVE! Google Play purchase verify aur acknowledge ho gaya.","success");
+        }else{
+          localStorage.setItem("elvish_vip_active","false");
+          showStatus("Purchase verify hui, lekin subscription abhi active nahi hai.","error");
+        }
+      }catch(error){
+        localStorage.setItem("elvish_vip_active","false");
+        showStatus(error.message||"Server verification fail hui. Dobara retry karein.","error");
+      }finally{
+        payButton.disabled=false;
+      }
+      return;
+    }
+    payButton.disabled=false;
+    if(detail.message)showStatus(detail.message,"error");
   });
+  // On each app load, VIP is true only if the backend confirms it.
+  refreshVipStatus();
 })();
 </script>
 <!-- END ELVISH ARMY VIP / GOOGLE PLAY BILLING BRIDGE -->

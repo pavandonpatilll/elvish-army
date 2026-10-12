@@ -2251,6 +2251,195 @@ def register_user(user: UserCreate):
     
 
 
+
+# =====================================================
+# GOOGLE PLAY BILLING (VIP SUBSCRIPTION)
+# =====================================================
+# Configure GOOGLE_PLAY_SERVICE_ACCOUNT_JSON or
+# GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 on Render. Never put this key in the app.
+GOOGLE_PLAY_PACKAGE_NAME = os.getenv("GOOGLE_PLAY_PACKAGE_NAME", "com.mycompany.elvisharmy").strip()
+GOOGLE_PLAY_PRODUCT_ID = os.getenv("GOOGLE_PLAY_PRODUCT_ID", "vip_legend_monthly").strip()
+GOOGLE_PLAY_BASE_PLAN_ID = os.getenv("GOOGLE_PLAY_BASE_PLAN_ID", "vip-monthly").strip()
+GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON", "").strip()
+GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 = os.getenv("GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64", "").strip()
+
+class GooglePlayVerifyRequest(BaseModel):
+    user_id: str
+    purchase_token: str
+    product_id: str = "vip_legend_monthly"
+
+def _google_play_credentials():
+    """Build scoped Google credentials from a Render-only service account secret."""
+    raw = ""
+    if GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64:
+        try:
+            raw = base64.b64decode(GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64).decode("utf-8")
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail="Google Play service-account secret is not valid base64") from exc
+    elif GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:
+        raw = GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
+    else:
+        raise HTTPException(status_code=503, detail="Google Play verification is not configured on the server")
+    try:
+        from google.oauth2 import service_account
+        info = json.loads(raw)
+        return service_account.Credentials.from_service_account_info(
+            info, scopes=["https://www.googleapis.com/auth/androidpublisher"]
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Google Play service-account configuration failed")
+        raise HTTPException(status_code=503, detail="Google Play service-account configuration is invalid") from exc
+
+def _google_play_session():
+    try:
+        from google.auth.transport.requests import AuthorizedSession
+        return AuthorizedSession(_google_play_credentials())
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Google Play API client could not be initialized")
+        raise HTTPException(status_code=503, detail="Google Play API dependencies are missing; install google-auth and requests") from exc
+
+def _google_play_get_subscription(session, token: str):
+    from urllib.parse import quote
+    url = (
+        "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
+        + quote(GOOGLE_PLAY_PACKAGE_NAME, safe="")
+        + "/purchases/subscriptionsv2/tokens/" + quote(token, safe="")
+    )
+    try:
+        response = session.get(url, timeout=20)
+    except Exception as exc:
+        logger.exception("Google Play subscription lookup failed")
+        raise HTTPException(status_code=502, detail="Google Play verification service could not be reached") from exc
+    if response.status_code != 200:
+        logger.warning("Google Play subscription lookup returned HTTP %s", response.status_code)
+        if response.status_code in (400, 404):
+            raise HTTPException(status_code=400, detail="Google Play purchase token is invalid or not available")
+        if response.status_code in (401, 403):
+            raise HTTPException(status_code=503, detail="Google Play API permission is not configured correctly")
+        raise HTTPException(status_code=502, detail="Google Play could not verify this purchase; try again")
+    try:
+        return response.json()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Google Play returned an unreadable verification response") from exc
+
+def _google_play_acknowledge(session, token: str):
+    from urllib.parse import quote
+    url = (
+        "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
+        + quote(GOOGLE_PLAY_PACKAGE_NAME, safe="")
+        + "/purchases/subscriptions/" + quote(GOOGLE_PLAY_PRODUCT_ID, safe="")
+        + "/tokens/" + quote(token, safe="") + ":acknowledge"
+    )
+    try:
+        response = session.post(url, json={}, timeout=20)
+    except Exception as exc:
+        logger.exception("Google Play acknowledgement request failed")
+        raise HTTPException(status_code=502, detail="Purchase verified, but Google Play acknowledgement failed; retry verification") from exc
+    if response.status_code not in (200, 204):
+        logger.warning("Google Play acknowledgement returned HTTP %s", response.status_code)
+        raise HTTPException(status_code=502, detail="Purchase verified, but Google Play acknowledgement failed; check Play Console API permissions and retry")
+
+def _ensure_google_play_table(conn):
+    conn.execute("""CREATE TABLE IF NOT EXISTS google_play_subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        purchase_token TEXT NOT NULL UNIQUE,
+        product_id TEXT NOT NULL,
+        base_plan_id TEXT DEFAULT '',
+        subscription_state TEXT NOT NULL,
+        expiry_time TEXT NOT NULL,
+        order_id TEXT DEFAULT '',
+        acknowledged INTEGER DEFAULT 0,
+        updated_at TEXT NOT NULL
+    )""")
+
+def _subscription_is_entitled(state: str, expiry_time: str) -> bool:
+    # Canceled subscriptions remain entitled until their paid expiry.
+    if state not in ("SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD", "SUBSCRIPTION_STATE_CANCELED"):
+        return False
+    try:
+        expiry = datetime.fromisoformat(expiry_time.replace("Z", "+00:00"))
+        from datetime import timezone
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+        return expiry > datetime.now(timezone.utc)
+    except Exception:
+        return False
+
+def _verify_and_store_google_play_purchase(user_id: str, token: str):
+    user_id = (user_id or "").strip()[:100]
+    token = (token or "").strip()
+    if not user_id or not token or len(token) > 5000:
+        raise HTTPException(status_code=400, detail="User ID or purchase token is missing/invalid")
+
+    session = _google_play_session()
+    purchase = _google_play_get_subscription(session, token)
+    line_items = purchase.get("lineItems") or []
+    item = next((x for x in line_items if x.get("productId") == GOOGLE_PLAY_PRODUCT_ID), None)
+    if not item:
+        raise HTTPException(status_code=400, detail="Purchase does not match the Elvish Army VIP product")
+
+    state = str(purchase.get("subscriptionState") or "")
+    expiry_time = str(item.get("expiryTime") or "")
+    if not expiry_time or not _subscription_is_entitled(state, expiry_time):
+        raise HTTPException(status_code=403, detail="Google Play subscription is not currently active")
+
+    conn = get_db()
+    try:
+        _ensure_google_play_table(conn)
+        owner = conn.execute("SELECT user_id FROM google_play_subscriptions WHERE purchase_token=?", (token,)).fetchone()
+        if owner and owner["user_id"] != user_id:
+            raise HTTPException(status_code=409, detail="This purchase is already linked to another app account")
+
+        acknowledged = str(purchase.get("acknowledgementState") or "") == "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED"
+        if not acknowledged:
+            _google_play_acknowledge(session, token)
+            acknowledged = True
+
+        auto_plan = item.get("offerDetails") or {}
+        base_plan_id = str(auto_plan.get("basePlanId") or GOOGLE_PLAY_BASE_PLAN_ID)
+        order_id = str(purchase.get("latestOrderId") or "")
+        conn.execute("""INSERT INTO google_play_subscriptions
+            (user_id, purchase_token, product_id, base_plan_id, subscription_state, expiry_time, order_id, acknowledged, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(purchase_token) DO UPDATE SET
+              subscription_state=excluded.subscription_state, expiry_time=excluded.expiry_time,
+              order_id=excluded.order_id, acknowledged=excluded.acknowledged, updated_at=excluded.updated_at
+        """, (user_id, token, GOOGLE_PLAY_PRODUCT_ID, base_plan_id, state, expiry_time, order_id, 1 if acknowledged else 0, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+        return {"status": "success", "vip": True, "product_id": GOOGLE_PLAY_PRODUCT_ID, "subscription_state": state, "expiry_time": expiry_time, "acknowledged": acknowledged}
+    finally:
+        conn.close()
+
+@app.post("/api/google-play/verify")
+def verify_google_play_purchase(data: GooglePlayVerifyRequest):
+    """Verify purchase directly with Google, acknowledge it, and save VIP entitlement."""
+    if data.product_id != GOOGLE_PLAY_PRODUCT_ID:
+        raise HTTPException(status_code=400, detail="Unexpected VIP product ID")
+    return _verify_and_store_google_play_purchase(data.user_id, data.purchase_token)
+
+@app.get("/api/google-play/status/{user_id}")
+def google_play_vip_status(user_id: str):
+    """Return the stored VIP entitlement; expiry is checked on every request."""
+    user_id = (user_id or "").strip()[:100]
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required")
+    conn = get_db()
+    try:
+        _ensure_google_play_table(conn)
+        row = conn.execute("SELECT * FROM google_play_subscriptions WHERE user_id=? ORDER BY id DESC LIMIT 1", (user_id,)).fetchone()
+        if not row:
+            return {"status": "success", "vip": False, "subscription_state": "NONE", "expiry_time": None}
+        active = _subscription_is_entitled(row["subscription_state"], row["expiry_time"])
+        return {"status": "success", "vip": active, "subscription_state": row["subscription_state"], "expiry_time": row["expiry_time"], "acknowledged": bool(row["acknowledged"])}
+    finally:
+        conn.close()
+
+
 # =====================================================
 # SOCIAL PROFILES / FOLLOW GRAPH / DIRECT MESSAGES
 # =====================================================
