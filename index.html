@@ -2992,20 +2992,38 @@ function eaRenderMini(){
     </div>`;
 }
 
-function showFanZone(){
+async function showFanZone(){
     const c=document.getElementById("pageContainer"),s=eaGetState(),rank=eaRank(s.xp);
+    const vipActive=(typeof window.eaCheckVipEntitlement==="function")?await window.eaCheckVipEntitlement():false;
     const missions=[
         ["open","📅","Open the app today","Daily check-in • +10 XP"],
         ["quiz","🧠","Complete today’s quiz","Finish all questions • +25 XP"],
         ["post","👥","Share something with Army","Make one Community post • +20 XP"]
     ];
     const badges={first:"🔥 First Day",streak3:"⚡ 3-Day Streak",quiz5:"🧠 Quiz Master",poster:"📣 Community Star",legend:"👑 1000 XP Legend"};
+    let vipPanel="";
+    if(vipActive){
+      let vipData=null;
+      try{vipData=await window.eaFetchVipContent();}catch(e){vipData=null;}
+      if(vipData&&vipData.vip===true&&Array.isArray(vipData.content)){
+        vipPanel=`<div class="ea-vip-hub">
+          <div class="ea-vip-hub-head"><div><h3 style="color:#ffe09a;font-size:20px">👑 VIP Legend Lounge</h3><p class="social-muted" style="margin-top:5px">Server-verified membership • Exclusive member hub</p></div><span class="ea-vip-badge">👑 VIP ACTIVE</span></div>
+          <div class="ea-vip-hub-grid">${vipData.content.map(item=>`<article class="ea-vip-hub-item"><div style="font-size:25px">${escapeHTML(item.icon||"✨")}</div><h4>${escapeHTML(item.title||"VIP benefit")}</h4><p>${escapeHTML(item.description||"")}</p><button type="button" onclick="eaVipAction('${escapeHTML(item.action||"community")}')">${escapeHTML(item.button||"Open")}</button></article>`).join("")}</div>
+          <p class="ea-vip-note" style="margin-top:12px">VIP perks remain available while your subscription is verified as active. Community spotlight is a submission opportunity, not a guaranteed feature.</p>
+        </div>`;
+      }else{
+        vipPanel=`<div class="fan-zone-card ea-vip-card"><h3>👑 VIP Legend Lounge</h3><p class="social-muted">VIP status active hai, lekin exclusive content server se load nahi ho saka.</p><button class="join-btn" style="width:100%;margin-top:12px" onclick="showFanZone()">Retry VIP Content</button></div>`;
+      }
+    }else{
+      vipPanel=`<div class="fan-zone-card"><h3>👑 VIP Legend Lounge</h3><div class="ea-vip-hub-lock"><div style="font-size:30px">🔒</div><div class="lock-copy"><b>Members-only content locked</b><br>VIP Lounge, fan missions, Spotlight entry, Reels Corner shortcuts aur gold profile identity unlock karne ke liye active VIP subscription chahiye.</div></div><button class="join-btn" style="width:100%;margin-top:12px" onclick="window.eaOpenVipModal && window.eaOpenVipModal()">Unlock VIP • ₹15/month</button></div>`;
+    }
     c.innerHTML=`<div class="fan-zone-card">
         <div style="font-size:28px;">🔥</div><h3 style="margin-top:8px;">Your Army Journey</h3>
-        <p class="update-text">${escapeHTML(localStorage.getItem("elvish_username")||"Elvish Fan")} • Level ${eaLevel(s.xp)}</p>
+        <p class="update-text">${escapeHTML(localStorage.getItem("elvish_username")||"Elvish Fan")} • Level ${eaLevel(s.xp)} ${vipActive?'<span class="ea-vip-badge">👑 VIP</span>':''}</p>
         <div style="margin-top:10px;"><span class="rank-badge">${rank[0]}</span></div>
         <div class="fan-stats"><div class="fan-stat"><b>${s.xp}</b><span>Total XP</span></div><div class="fan-stat"><b>${s.streak}</b><span>Streak</span></div><div class="fan-stat"><b>${s.badges.length}</b><span>Badges</span></div></div>
     </div>
+    ${vipPanel}
     <div class="fan-zone-card"><h3>🎯 Daily Missions</h3>${missions.map(m=>`<div class="mission ${s.missions[m[0]]?'done':''}"><div class="mission-icon">${s.missions[m[0]]?'✅':m[1]}</div><div class="mission-text"><b>${m[2]}</b><small>${s.missions[m[0]]?'Completed today 🎉':m[3]}</small></div></div>`).join('')}</div>
     <div class="fan-zone-card"><h3>🏆 Badges</h3><div class="badges">${Object.entries(badges).map(([k,v])=>`<span class="badge-pill" style="opacity:${s.badges.includes(k)?1:.35};">${v}</span>`).join('')}</div></div>`;
 }
@@ -3029,7 +3047,7 @@ function socialUserRow(profile){const uid=socialUserId();return `<div class="soc
 async function showSocialSearch(){const c=document.getElementById("pageContainer");c.innerHTML=`<div class="fan-zone-card"><h2>🔎 Discover people</h2><p class="social-muted" style="margin:6px 0 14px">Find fans, follow them and start a chat.</p><div class="social-search-row"><input class="social-input" id="socialSearchInput" placeholder="Search username or bio..." maxlength="60" onkeydown="if(event.key==='Enter')searchSocialUsers()"><button class="social-btn" onclick="searchSocialUsers()">Search</button></div><div id="socialSearchResults" style="margin-top:10px"></div></div>`;await ensureMySocialProfile();await searchSocialUsers();}
 async function searchSocialUsers(){const q=document.getElementById("socialSearchInput")?.value.trim()||"";const out=document.getElementById("socialSearchResults");if(!out)return;out.innerHTML='<div class="social-muted">Searching…</div>';try{const d=await socialApi(`/api/social/search?q=${encodeURIComponent(q)}&viewer_id=${encodeURIComponent(socialUserId())}`);const users=(d.users||[]).filter(u=>u.user_id!==socialUserId());out.innerHTML=users.length?users.map(socialUserRow).join(""):'<div class="social-empty">No profiles yet. Share a post so other fans can find you. ✨</div>';}catch(e){out.innerHTML=`<div class="social-empty">${escapeHTML(e.message)}</div>`;}}
 async function toggleSocialFollow(otherId,button){try{const d=await socialApi('/api/social/follow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({follower_id:socialUserId(),following_id:otherId})});if(button){button.textContent=d.following?'Following':'Follow';button.classList.toggle('following',d.following);}if(document.getElementById('socialProfileRoot'))await openSocialProfile(otherId); }catch(e){alert(e.message);}}
-async function openSocialProfile(otherId){const c=document.getElementById('pageContainer');if(!c)return;c.innerHTML='<div class="social-empty">Loading profile…</div>';try{const d=await socialApi(`/api/social/profile/${encodeURIComponent(otherId)}?viewer_id=${encodeURIComponent(socialUserId())}`);const p=d.profile;const postData=await socialApi(`/api/community?user_id=${encodeURIComponent(socialUserId())}`);const posts=(postData.posts||[]).filter(x=>String(x.user_id)===String(otherId));c.innerHTML=`<div id="socialProfileRoot" class="fan-zone-card"><div class="social-top">${socialAvatar(p)}<div class="user-info"><h2>${escapeHTML(p.username)}</h2><div class="social-muted">${escapeHTML(p.bio||'No bio yet')}</div></div>${otherId!==socialUserId()?`<button class="social-btn ${p.is_following?'following':''}" onclick="toggleSocialFollow('${escapeHTML(otherId)}',this)">${p.is_following?'Following':'Follow'}</button>`:''}</div><div class="social-stat-row"><div class="social-stat" onclick="showSocialPeople('${escapeHTML(otherId)}','followers')"><b>${p.followers_count}</b><span>Followers</span></div><div class="social-stat" onclick="showSocialPeople('${escapeHTML(otherId)}','following')"><b>${p.following_count}</b><span>Following</span></div><div class="social-stat"><b>${p.posts_count}</b><span>Posts</span></div></div>${otherId!==socialUserId()?`<button class="social-btn" style="width:100%" onclick="openChat('${escapeHTML(otherId)}','${escapeHTML(p.username)}')">💬 Message</button>`:`<button class="social-btn secondary" onclick="editMyProfile()">✏️ Edit profile</button>`}<div class="social-grid">${posts.map(post=>{const url=socialMediaUrl(post.media_url||post.image_url||'');return `<div class="social-grid-item" onclick="openSocialPost('${post.id}')">${url?(String(post.media_type||'').startsWith('video/')?`<video src="${escapeHTML(url)}" muted playsinline></video>`:`<img src="${escapeHTML(url)}" loading="lazy">`):`<span style="padding:8px;font-size:12px">${escapeHTML(post.content||'Post')}</span>`}</div>`}).join('')}</div>${posts.length?'':'<div class="social-empty">No posts yet 📸</div>'}</div>`;}catch(e){c.innerHTML=`<div class="social-empty">${escapeHTML(e.message)}<br><button class="social-btn" onclick="openSection('Search')">Back to search</button></div>`;}}
+async function openSocialProfile(otherId){const c=document.getElementById('pageContainer');if(!c)return;c.innerHTML='<div class="social-empty">Loading profile…</div>';try{const d=await socialApi(`/api/social/profile/${encodeURIComponent(otherId)}?viewer_id=${encodeURIComponent(socialUserId())}`);const p=d.profile;const postData=await socialApi(`/api/community?user_id=${encodeURIComponent(socialUserId())}`);const posts=(postData.posts||[]).filter(x=>String(x.user_id)===String(otherId));c.innerHTML=`<div id="socialProfileRoot" class="fan-zone-card ${vipActive?'ea-vip-card':''}"><div class="social-top">${socialAvatar(p)}<div class="user-info"><h2>${escapeHTML(p.username)} ${vipActive?'<span class="ea-vip-badge">👑 VIP</span>':''}</h2><div class="social-muted">${escapeHTML(p.bio||'No bio yet')}</div></div>${otherId!==socialUserId()?`<button class="social-btn ${p.is_following?'following':''}" onclick="toggleSocialFollow('${escapeHTML(otherId)}',this)">${p.is_following?'Following':'Follow'}</button>`:''}</div><div class="social-stat-row"><div class="social-stat" onclick="showSocialPeople('${escapeHTML(otherId)}','followers')"><b>${p.followers_count}</b><span>Followers</span></div><div class="social-stat" onclick="showSocialPeople('${escapeHTML(otherId)}','following')"><b>${p.following_count}</b><span>Following</span></div><div class="social-stat"><b>${p.posts_count}</b><span>Posts</span></div></div>${otherId!==socialUserId()?`<button class="social-btn" style="width:100%" onclick="openChat('${escapeHTML(otherId)}','${escapeHTML(p.username)}')">💬 Message</button>`:`<button class="social-btn secondary" onclick="editMyProfile()">✏️ Edit profile</button>`}<div class="social-grid">${posts.map(post=>{const url=socialMediaUrl(post.media_url||post.image_url||'');return `<div class="social-grid-item" onclick="openSocialPost('${post.id}')">${url?(String(post.media_type||'').startsWith('video/')?`<video src="${escapeHTML(url)}" muted playsinline></video>`:`<img src="${escapeHTML(url)}" loading="lazy">`):`<span style="padding:8px;font-size:12px">${escapeHTML(post.content||'Post')}</span>`}</div>`}).join('')}</div>${posts.length?'':'<div class="social-empty">No posts yet 📸</div>'}</div>`;}catch(e){c.innerHTML=`<div class="social-empty">${escapeHTML(e.message)}<br><button class="social-btn" onclick="openSection('Search')">Back to search</button></div>`;}}
 async function showSocialPeople(userId,kind){const c=document.getElementById('pageContainer');c.innerHTML='<div class="social-empty">Loading…</div>';try{const d=await socialApi(`/api/social/${kind}/${encodeURIComponent(userId)}?viewer_id=${encodeURIComponent(socialUserId())}`);c.innerHTML=`<div class="fan-zone-card"><button class="social-btn secondary" onclick="openSocialProfile('${escapeHTML(userId)}')">← Profile</button><h2 style="margin-top:14px">${kind==='followers'?'Followers':'Following'}</h2>${d.users.length?d.users.map(socialUserRow).join(''):'<div class="social-empty">No users here yet.</div>'}</div>`;}catch(e){c.innerHTML=`<div class="social-empty">${escapeHTML(e.message)}</div>`;}}
 async function showInbox(){const c=document.getElementById('pageContainer');await ensureMySocialProfile();c.innerHTML=`<div class="fan-zone-card"><div class="social-section-title"><div><h2>💬 Messages</h2><div class="social-muted">Private conversations</div></div><button class="social-btn secondary" onclick="openSection('Search')">New chat +</button></div><div id="inboxList"><div class="social-empty">Loading chats…</div></div></div>`;await loadInbox();}
 async function loadInbox(){const out=document.getElementById('inboxList');if(!out)return;try{const d=await socialApi(`/api/social/messages/conversations/${encodeURIComponent(socialUserId())}`);out.innerHTML=d.conversations.length?d.conversations.map(x=>`<div class="social-message-row" onclick="openChat('${escapeHTML(x.user_id)}','${escapeHTML(x.username)}')">${socialAvatar(x)}<div style="flex:1;min-width:0"><b>${escapeHTML(x.username)}</b><div class="social-muted">${escapeHTML(x.last_message||'Say hello 👋')}</div></div><span>›</span></div>`).join(''):'<div class="social-empty">Abhi chat nahi hai.<br>Search se kisi ko follow karke Message karo. 💜</div>';}catch(e){out.innerHTML=`<div class="social-empty">${escapeHTML(e.message)}</div>`;}}
@@ -3040,7 +3058,7 @@ async function sendDirectMessage(){const input=document.getElementById('chatText
 async function editMyProfile(){const currentBio=localStorage.getItem('elvish_bio')||'';const name=prompt('Your username:',socialUserName());if(name===null)return;const username=name.trim().slice(0,30);if(!username){alert('Username required');return;}const bio=prompt('Short bio (max 160 characters):',currentBio);if(bio===null)return;localStorage.setItem('elvish_username',username);localStorage.setItem('elvish_bio',bio.slice(0,160));await ensureMySocialProfile(username);showProfile();}
 async function uploadMyAvatar(input){const file=input.files&&input.files[0];if(!file)return;if(!file.type.startsWith('image/')){alert('Profile photo ke liye image choose karo.');input.value='';return;}if(file.size>8*1024*1024){alert('Profile photo 8 MB se chhoti rakho.');input.value='';return;}try{const fd=new FormData();fd.append('file',file);const up=await socialApi('/api/community/upload',{method:'POST',body:fd});localStorage.setItem('elvish_avatar',up.url);await ensureMySocialProfile();await showProfile();}catch(e){alert(e.message);}finally{input.value='';}}
 async function reportSocialPost(postId){const reason=prompt('Report reason (spam, abuse, inappropriate content, etc.):');if(!reason||!reason.trim())return;try{await socialApi('/api/social/report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reporter_id:socialUserId(),target_type:'post',target_id:String(postId),reason:reason.trim()})});alert('Report submit ho gaya. Thank you.');}catch(e){alert(e.message);}}
-async function showProfile(){const c=document.getElementById('pageContainer');const s=eaGetState(),rank=eaRank(s.xp);await ensureMySocialProfile();try{const d=await socialApi(`/api/social/profile/${encodeURIComponent(socialUserId())}?viewer_id=${encodeURIComponent(socialUserId())}`);const p=d.profile;const result=await socialApi(`/api/community?user_id=${encodeURIComponent(socialUserId())}`);const posts=(result.posts||[]).filter(x=>String(x.user_id)===String(socialUserId()));c.innerHTML=`<div id="socialProfileRoot" class="fan-zone-card"><div class="social-top">${socialAvatar(p)}<div class="user-info"><h2>${escapeHTML(p.username)}</h2><div class="social-muted">${escapeHTML(p.bio||'Add a short bio to introduce yourself.')}</div><div style="margin-top:8px"><span class="rank-badge">${rank[0]}</span> <span class="social-muted">Level ${eaLevel(s.xp)}</span></div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="social-btn secondary" onclick="editMyProfile()">✏️ Edit</button><label class="social-btn secondary" style="cursor:pointer">📷 Photo<input type="file" accept="image/*" capture="user" onchange="uploadMyAvatar(this)" hidden></label></div></div><div class="social-stat-row"><div class="social-stat"><b>${p.posts_count}</b><span>Posts</span></div><div class="social-stat" onclick="showSocialPeople('${escapeHTML(socialUserId())}','followers')"><b>${p.followers_count}</b><span>Followers</span></div><div class="social-stat" onclick="showSocialPeople('${escapeHTML(socialUserId())}','following')"><b>${p.following_count}</b><span>Following</span></div></div><div class="social-stat-row"><div class="social-stat"><b>${s.xp}</b><span>Fan XP</span></div><div class="social-stat"><b>${s.streak}</b><span>Streak</span></div><div class="social-stat"><b>${s.badges.length}</b><span>Badges</span></div></div><div class="social-actions"><button class="social-btn" onclick="openSection('Community')">➕ New post</button><button class="social-btn secondary" onclick="openSection('Inbox')">💬 Messages</button><button class="social-btn secondary" onclick="openSection('Fan Zone')">🔥 Fan Zone</button></div><div class="social-grid">${posts.map(post=>{const url=socialMediaUrl(post.media_url||post.image_url||'');return `<div class="social-grid-item" onclick="openSocialPost('${post.id}')">${url?(String(post.media_type||'').startsWith('video/')?`<video src="${escapeHTML(url)}" muted playsinline></video>`:`<img src="${escapeHTML(url)}" loading="lazy">`):`<span style="padding:8px;font-size:12px">${escapeHTML(post.content||'Post')}</span>`}</div>`}).join('')}</div>${posts.length?'':'<div class="social-empty">Your first post will appear here 📸</div>'}</div>`;}catch(e){c.innerHTML=`<div class="fan-zone-card"><h2>${escapeHTML(socialUserName())}</h2><p class="social-muted">Profile loading issue: ${escapeHTML(e.message)}</p><button class="social-btn" onclick="openSection('Community')">Create post</button></div>`;}}
+async function showProfile(){const c=document.getElementById('pageContainer');const s=eaGetState(),rank=eaRank(s.xp);const vipActive=(typeof window.eaCheckVipEntitlement==='function')?await window.eaCheckVipEntitlement():false;await ensureMySocialProfile();try{const d=await socialApi(`/api/social/profile/${encodeURIComponent(socialUserId())}?viewer_id=${encodeURIComponent(socialUserId())}`);const p=d.profile;const result=await socialApi(`/api/community?user_id=${encodeURIComponent(socialUserId())}`);const posts=(result.posts||[]).filter(x=>String(x.user_id)===String(socialUserId()));c.innerHTML=`<div id="socialProfileRoot" class="fan-zone-card ${vipActive?'ea-vip-card':''}"><div class="social-top">${socialAvatar(p)}<div class="user-info"><h2>${escapeHTML(p.username)} ${vipActive?'<span class="ea-vip-badge">👑 VIP</span>':''}</h2><div class="social-muted">${escapeHTML(p.bio||'Add a short bio to introduce yourself.')}</div><div style="margin-top:8px"><span class="rank-badge">${rank[0]}</span> <span class="social-muted">Level ${eaLevel(s.xp)}</span></div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="social-btn secondary" onclick="editMyProfile()">✏️ Edit</button><label class="social-btn secondary" style="cursor:pointer">📷 Photo<input type="file" accept="image/*" capture="user" onchange="uploadMyAvatar(this)" hidden></label></div></div><div class="social-stat-row"><div class="social-stat"><b>${p.posts_count}</b><span>Posts</span></div><div class="social-stat" onclick="showSocialPeople('${escapeHTML(socialUserId())}','followers')"><b>${p.followers_count}</b><span>Followers</span></div><div class="social-stat" onclick="showSocialPeople('${escapeHTML(socialUserId())}','following')"><b>${p.following_count}</b><span>Following</span></div></div><div class="social-stat-row"><div class="social-stat"><b>${s.xp}</b><span>Fan XP</span></div><div class="social-stat"><b>${s.streak}</b><span>Streak</span></div><div class="social-stat"><b>${s.badges.length}</b><span>Badges</span></div></div><div class="social-actions"><button class="social-btn" onclick="openSection('Community')">➕ New post</button><button class="social-btn secondary" onclick="openSection('Inbox')">💬 Messages</button><button class="social-btn secondary" onclick="openSection('Fan Zone')">🔥 Fan Zone</button></div><div class="social-grid">${posts.map(post=>{const url=socialMediaUrl(post.media_url||post.image_url||'');return `<div class="social-grid-item" onclick="openSocialPost('${post.id}')">${url?(String(post.media_type||'').startsWith('video/')?`<video src="${escapeHTML(url)}" muted playsinline></video>`:`<img src="${escapeHTML(url)}" loading="lazy">`):`<span style="padding:8px;font-size:12px">${escapeHTML(post.content||'Post')}</span>`}</div>`}).join('')}</div>${posts.length?'':'<div class="social-empty">Your first post will appear here 📸</div>'}</div>`;}catch(e){c.innerHTML=`<div class="fan-zone-card"><h2>${escapeHTML(socialUserName())}</h2><p class="social-muted">Profile loading issue: ${escapeHTML(e.message)}</p><button class="social-btn" onclick="openSection('Community')">Create post</button></div>`;}}
 async function openSocialPost(postId){openSection('Community');setTimeout(()=>{const el=document.querySelector(`[data-social-post-id="${CSS.escape(String(postId))}"]`);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},500);}
 async function loadSocialFeed(followingOnly=false){try{const d=await socialApi(`/api/social/feed?user_id=${encodeURIComponent(socialUserId())}&following_only=${followingOnly}`);const c=document.getElementById('communityContainer');if(!c)return; // Existing feed renderer remains the source of full media/actions; filter cards by post ids.
 const ids=new Set((d.posts||[]).map(p=>String(p.id)));c.querySelectorAll('.update-card').forEach(card=>{const id=card.getAttribute('data-social-post-id');if(id)card.style.display=ids.has(id)?'':'none';});if(followingOnly&&d.posts.length===0)c.insertAdjacentHTML('afterbegin','<div class="social-empty" id="followingEmpty">Follow some fans to see their posts here.</div>');else document.getElementById('followingEmpty')?.remove();}catch(e){alert(e.message);}}
@@ -4104,6 +4122,19 @@ startApp();
 
 
 
+<style>
+.ea-vip-hub{margin-top:14px;padding:16px;border:1px solid #f6c75a66;border-radius:18px;background:radial-gradient(circle at top right,#8d5a1f35,transparent 42%),linear-gradient(145deg,#1b1423,#111018);box-shadow:0 10px 32px #0005}
+.ea-vip-hub-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ea-vip-hub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ea-vip-hub-item{padding:13px;border:1px solid #ffd36a30;border-radius:14px;background:#ffffff08;min-width:0}
+.ea-vip-hub-item h4{font-size:14px;color:#ffe09a;margin:5px 0 7px}
+.ea-vip-hub-item p{font-size:12px;line-height:1.5;color:#d5cedc;margin:0 0 12px}
+.ea-vip-hub-item button{width:100%;border:1px solid #ffd36a70;border-radius:10px;padding:9px 8px;background:linear-gradient(110deg,#f5c04c,#ffdf8a);color:#211408;font-weight:850;cursor:pointer}
+.ea-vip-hub-lock{padding:14px;border-radius:14px;border:1px dashed #ffd36a55;background:#ffffff06;display:flex;gap:12px;align-items:center}
+.ea-vip-hub-lock .lock-copy{font-size:12px;line-height:1.5;color:#d5cedc}
+@media(max-width:430px){.ea-vip-hub-grid{grid-template-columns:1fr}.ea-vip-hub{padding:13px}}
+</style>
+
 <!-- ELVISH ARMY VIP / GOOGLE PLAY BILLING BRIDGE -->
 <style>
 .ea-vip-launch{border:1px solid #ffd36a;border-radius:12px;padding:10px 13px;background:linear-gradient(120deg,#f5b400,#ff438c);color:#160d19;font-weight:900;cursor:pointer;white-space:nowrap;box-shadow:0 5px 22px #f5b40030}
@@ -4133,9 +4164,9 @@ startApp();
     <div class="ea-vip-price">₹15 <small>/ month</small></div>
     <p class="ea-vip-muted">Join the VIP side of the community.</p>
     <div class="ea-vip-feature">👑 Gold VIP profile badge and premium styling</div>
-    <div class="ea-vip-feature">✨ Exclusive VIP theme accents</div>
-    <div class="ea-vip-feature">🔥 Premium Fan Zone activities</div>
-    <div class="ea-vip-feature">🎯 Special fan challenges and VIP identity</div>
+    <div class="ea-vip-feature">🔒 Server-verified VIP Legend Lounge</div>
+    <div class="ea-vip-feature">🔥 Members-only fan missions and Spotlight entry</div>
+    <div class="ea-vip-feature">🎬 VIP Reels Corner and Community shortcuts</div>
     <button class="ea-vip-pay" id="eaVipPay" type="button">👑 Subscribe with Google Play</button>
     <div class="ea-vip-status" id="eaVipStatus" aria-live="polite">Google Play subscription Android app integration ke baad available hogi.</div>
     <p class="ea-vip-note">Subscription purchase must be completed through Google Play in the Android app. Membership activates only after secure server-side purchase verification. Product ID configured for the Android integration: <b>vip_legend_monthly</b>.</p>
@@ -4166,6 +4197,34 @@ startApp();
     if(!response.ok) throw new Error(data.detail || "VIP status check failed. Try again.");
     return data;
   }
+  async function checkVipEntitlement(){
+    const userId=vipUserId();
+    if(!userId)return false;
+    try{
+      const data=await vipApiRequest("/api/google-play/status/"+encodeURIComponent(userId));
+      const active=data.vip===true;
+      localStorage.setItem("elvish_vip_active",active?"true":"false");
+      return active;
+    }catch(error){
+      localStorage.setItem("elvish_vip_active","false");
+      return false;
+    }
+  }
+  window.eaCheckVipEntitlement=checkVipEntitlement;
+  window.eaFetchVipContent=async function(){
+    const userId=vipUserId();
+    if(!userId) throw new Error("Login required");
+    const data=await vipApiRequest("/api/vip/content/"+encodeURIComponent(userId));
+    if(data.vip!==true) throw new Error("Active VIP required");
+    return data;
+  };
+  window.eaVipAction=function(action){
+    if(action==="community")openSection("Community");
+    else if(action==="reels")openSection("Videos");
+    else if(action==="profile")showProfile();
+    else openSection("Fan Zone");
+  };
+  window.eaOpenVipModal=function(){overlay.classList.add("open");refreshVipStatus();};
   async function refreshVipStatus(){
     const userId = vipUserId();
     if(!userId){ localStorage.setItem("elvish_vip_active","false"); return false; }
@@ -4176,6 +4235,8 @@ startApp();
       if(active){
         const expiry = data.expiry_time ? new Date(data.expiry_time).toLocaleDateString() : "";
         showStatus("👑 VIP ACTIVE" + (expiry ? " · valid until " + expiry : "") + ". Subscription Google Play se verify hui.","success");
+      }else{
+        showStatus("VIP active nahi hai. Purchase complete karke server verification hone dein.");
       }
       return active;
     }catch(error){
@@ -4248,6 +4309,7 @@ startApp();
         if(result.vip===true){
           localStorage.setItem("elvish_vip_active","true");
           showStatus("👑 VIP ACTIVE! Google Play purchase verify aur acknowledge ho gaya.","success");
+          if(typeof showFanZone==="function") await showFanZone();
         }else{
           localStorage.setItem("elvish_vip_active","false");
           showStatus("Purchase verify hui, lekin subscription abhi active nahi hai.","error");

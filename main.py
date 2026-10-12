@@ -96,7 +96,8 @@ FIRESTORE_TABLES = (
     "updates", "news", "videos", "photos", "community_comments",
     "poll_votes", "users", "community_posts", "community_post_likes",
     "polls", "notifications", "app_stats",
-    "social_profiles", "social_follows", "direct_messages", "social_reports"
+    "social_profiles", "social_follows", "direct_messages", "social_reports",
+    "google_play_subscriptions"
 )
 
 def init_firebase():
@@ -479,6 +480,20 @@ def init_extra_db():
         (id, views)
         VALUES (1, 0)
     """)
+
+    # Verified Google Play VIP entitlements; mirrored to Firestore on commit.
+    conn.execute("""CREATE TABLE IF NOT EXISTS google_play_subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        purchase_token TEXT NOT NULL UNIQUE,
+        product_id TEXT NOT NULL,
+        base_plan_id TEXT DEFAULT '',
+        subscription_state TEXT NOT NULL,
+        expiry_time TEXT NOT NULL,
+        order_id TEXT DEFAULT '',
+        acknowledged INTEGER DEFAULT 0,
+        updated_at TEXT NOT NULL
+    )""")
 
     conn.commit()
 
@@ -2436,6 +2451,38 @@ def google_play_vip_status(user_id: str):
             return {"status": "success", "vip": False, "subscription_state": "NONE", "expiry_time": None}
         active = _subscription_is_entitled(row["subscription_state"], row["expiry_time"])
         return {"status": "success", "vip": active, "subscription_state": row["subscription_state"], "expiry_time": row["expiry_time"], "acknowledged": bool(row["acknowledged"])}
+    finally:
+        conn.close()
+
+
+@app.get("/api/vip/content/{user_id}")
+def get_vip_content(user_id: str):
+    """Serve the VIP lounge payload only when the stored Google Play entitlement is active."""
+    user_id = (user_id or "").strip()[:100]
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required")
+    conn = get_db()
+    try:
+        _ensure_google_play_table(conn)
+        row = conn.execute(
+            "SELECT * FROM google_play_subscriptions WHERE user_id=? ORDER BY id DESC LIMIT 1",
+            (user_id,),
+        ).fetchone()
+        if not row or not _subscription_is_entitled(row["subscription_state"], row["expiry_time"]):
+            raise HTTPException(status_code=403, detail="Active VIP Legend subscription required")
+        return {
+            "status": "success",
+            "vip": True,
+            "expiry_time": row["expiry_time"],
+            "membership": "VIP Legend",
+            "content": [
+                {"id": "lounge", "icon": "👑", "title": "VIP Legend Lounge", "description": "Your exclusive Elvish Army member space. Keep it positive, respectful and full of Army energy.", "action": "community", "button": "Enter Community"},
+                {"id": "daily-mission", "icon": "🔥", "title": "VIP Fan Mission", "description": "Post one original, positive message supporting the Elvish Army. Avoid spam and respect other fans.", "action": "community", "button": "Share Fan Message"},
+                {"id": "spotlight", "icon": "🌟", "title": "Fan Spotlight Entry", "description": "Share your best fan art, edit or community post. Spotlight selection is not guaranteed; submissions should be your own or used with permission.", "action": "community", "button": "Submit a Post"},
+                {"id": "reels", "icon": "🎬", "title": "Army Reels Corner", "description": "Explore fan edits and reels shared by the community.", "action": "reels", "button": "Explore Reels"},
+                {"id": "profile", "icon": "✨", "title": "Golden VIP Identity", "description": "Show your gold VIP badge and premium styling while your verified subscription remains active.", "action": "profile", "button": "View My Profile"},
+            ],
+        }
     finally:
         conn.close()
 
