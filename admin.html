@@ -59,6 +59,7 @@ button:disabled{opacity:.5;cursor:not-allowed}.login{max-width:430px;margin:55px
     <div class="tab" onclick="showTab('community',this)">👥 Community</div>
     <div class="tab" onclick="showTab('notifications',this)">🔔 Notifications</div>
     <div class="tab" onclick="showTab('photos',this)">📸 Photos</div>
+    <div class="tab" onclick="showTab('vipSubscriptions',this)">👑 VIP Subscriptions</div>
   </div>
 
   <section id="dashboard" class="card panel active">
@@ -125,6 +126,18 @@ button:disabled{opacity:.5;cursor:not-allowed}.login{max-width:430px;margin:55px
     <button class="primary" onclick="addPhoto()">ADD PHOTO</button>
     <div id="photoList"></div>
   </section>
+
+  <section id="vipSubscriptions" class="card panel">
+    <h2>👑 Google Play VIP Subscriptions</h2>
+    <p class="muted" style="margin:6px 0 12px">Verified subscriptions stored by backend. Purchase tokens are not displayed.</p>
+    <div id="vipStats" class="stats" style="margin-top:12px"></div>
+    <div class="form-grid" style="margin-top:12px">
+      <input id="vipSearch" placeholder="Search user ID, order ID or product" oninput="renderVipRows()">
+      <select id="vipFilter" onchange="renderVipRows()"><option value="all">All subscriptions</option><option value="active">Active</option><option value="cancelled">Cancelled</option><option value="expired">Expired / inactive</option></select>
+    </div>
+    <div class="actions"><button class="secondary" onclick="loadVipSubscriptions()">🔄 Reload saved data</button><button class="primary" onclick="refreshVipSubscriptions()">🔄 Verify with Google Play</button></div>
+    <p id="vipMessage" class="message"></p><div id="vipList"><div class="loading">Open this tab to load subscriptions.</div></div>
+  </section>
 </div>
 <div id="toast" class="toast"></div>
 
@@ -149,7 +162,7 @@ async function login(){
   if(!username||!password){msg.textContent='Username aur password bharo.';return}
   try{const r=await fetch(API+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Login failed');token=d.token;localStorage.setItem('adminToken',token);showAdmin();toast('Admin login successful 🔥')}catch(e){msg.textContent=e.message}}
 function showAdmin(){document.getElementById('login').classList.add('hidden');document.getElementById('admin').classList.remove('hidden');loadAll()}
-function showTab(id,el){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');if(id==='dashboard')loadDashboard()}
+function showTab(id,el){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');if(id==='dashboard')loadDashboard();if(id==='vipSubscriptions')loadVipSubscriptions()}
 async function checkFirebase(){
   const el=document.getElementById('firebaseStatus');
   if(!el)return;
@@ -206,6 +219,28 @@ async function deletePhoto(id){if(!confirm('Delete this photo?'))return;try{awai
 
 async function logout(){try{if(token)await fetch(API+'/api/admin/logout',{method:'POST',headers:headers()})}catch(e){}localStorage.removeItem('adminToken');token='';location.reload()}
 if(token)showAdmin();
+
+let vipRows=[];
+function loadVipSubscriptions(){
+ const box=document.getElementById('vipList'),msg=document.getElementById('vipMessage');if(!box)return;
+ box.innerHTML='<div class="loading">Loading subscriptions…</div>';msg.textContent='';
+ api('/api/admin/google-play-subscriptions').then(d=>{
+  vipRows=d.subscriptions||[];const s=d.stats||{};
+  document.getElementById('vipStats').innerHTML=[['Total',s.total||0],['Active',s.active||0],['Cancelled',s.cancelled||0],['Expired / inactive',s.expired_or_inactive||0]].map(x=>`<div class="stat">${x[0]}<b>${x[1]}</b></div>`).join('');
+  msg.textContent=d.firestore_sync_enabled?'Firebase sync enabled':'Warning: Firebase sync is not enabled';renderVipRows();
+ }).catch(e=>{box.innerHTML='<div class="error">'+esc(e.message)+'</div>';msg.textContent='Could not load subscriptions.'});
+}
+function renderVipRows(){
+ const box=document.getElementById('vipList');if(!box)return;
+ const q=(document.getElementById('vipSearch')?.value||'').toLowerCase().trim(),f=document.getElementById('vipFilter')?.value||'all';
+ const rows=vipRows.filter(x=>{const txt=[x.user_id,x.order_id,x.product_id,x.base_plan_id,x.subscription_state,x.status_label].join(' ').toLowerCase(),s=(x.status_label||'').toLowerCase();return (!q||txt.includes(q))&&(f==='all'||(f==='active'&&x.vip_active)||(f==='cancelled'&&s==='cancelled')||(f==='expired'&&!x.vip_active&&s!=='cancelled'))});
+ box.innerHTML=rows.map(x=>`<div class="item"><h3>${esc(x.status_label)} ${x.vip_active?'🟢':'⚪'}</h3><p><b>User ID:</b> ${esc(x.user_id)}</p><p><b>Product:</b> ${esc(x.product_id)} · <b>Base plan:</b> ${esc(x.base_plan_id)}</p><p><b>Google state:</b> ${esc(x.subscription_state)}</p><p><b>Expiry / paid-through:</b> ${esc(x.expiry_time)}</p><p><b>Latest order:</b> ${esc(x.order_id||'—')}</p><p><b>Acknowledged:</b> ${x.acknowledged?'Yes':'No'} · <b>Last updated:</b> ${esc(x.updated_at)}</p></div>`).join('')||'<div class="loading">No matching subscriptions found.</div>';
+}
+async function refreshVipSubscriptions(){
+ const msg=document.getElementById('vipMessage');msg.textContent='Checking saved purchases with Google Play…';
+ try{const d=await api('/api/admin/google-play-subscriptions/refresh',{method:'POST'});await loadVipSubscriptions();msg.textContent=`Refresh done. Updated ${d.updated||0}; errors ${(d.errors||[]).length}.`;if(d.errors?.length)console.warn('Google Play refresh errors',d.errors)}catch(e){msg.textContent=e.message}
+}
+
 </script>
 </body>
 </html>

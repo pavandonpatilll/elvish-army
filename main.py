@@ -2277,6 +2277,7 @@ GOOGLE_PLAY_PRODUCT_ID = os.getenv("GOOGLE_PLAY_PRODUCT_ID", "vip_legend_monthly
 GOOGLE_PLAY_BASE_PLAN_ID = os.getenv("GOOGLE_PLAY_BASE_PLAN_ID", "vip-monthly").strip()
 GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON", "").strip()
 GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 = os.getenv("GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64", "").strip()
+GOOGLE_PLAY_PUBSUB_SECRET = os.getenv("GOOGLE_PLAY_PUBSUB_SECRET", "").strip()
 
 class GooglePlayVerifyRequest(BaseModel):
     user_id: str
@@ -2451,6 +2452,107 @@ def google_play_vip_status(user_id: str):
             return {"status": "success", "vip": False, "subscription_state": "NONE", "expiry_time": None}
         active = _subscription_is_entitled(row["subscription_state"], row["expiry_time"])
         return {"status": "success", "vip": active, "subscription_state": row["subscription_state"], "expiry_time": row["expiry_time"], "acknowledged": bool(row["acknowledged"])}
+    finally:
+        conn.close()
+
+
+
+@app.get("/api/admin/google-play-subscriptions")
+def admin_google_play_subscriptions(authorization: str | None = Header(default=None), status: str = "", q: str = ""):
+    """Admin-only list of saved Play subscriptions. Purchase tokens are never returned."""
+    check_admin_token(authorization)
+    conn = get_db()
+    try:
+        _ensure_google_play_table(conn)
+        rows = conn.execute("""SELECT id,user_id,product_id,base_plan_id,subscription_state,expiry_time,order_id,acknowledged,updated_at FROM google_play_subscriptions ORDER BY id DESC""").fetchall()
+        status_filter = (status or "").strip().lower()
+        query = (q or "").strip().lower()
+        items = []
+        for row in rows:
+            item = dict(row)
+            active = _subscription_is_entitled(item.get("subscription_state", ""), item.get("expiry_time", ""))
+            item["vip_active"] = active
+            item["status_label"] = "Active" if active else ("Cancelled" if "CANCELED" in (item.get("subscription_state") or "") else ("Expired" if item.get("expiry_time") else "Inactive"))
+            if status_filter and status_filter != "all" and status_filter != item["status_label"].lower():
+                continue
+            haystack = " ".join(str(item.get(k, "")) for k in ("user_id","product_id","base_plan_id","subscription_state","order_id")).lower()
+            if query and query not in haystack:
+                continue
+            items.append(item)
+        return {"status":"success","subscriptions":items,"stats":{
+            "total":len(items),"active":sum(1 for x in items if x["vip_active"]),
+            "cancelled":sum(1 for x in items if x["status_label"]=="Cancelled"),
+            "expired_or_inactive":sum(1 for x in items if not x["vip_active"])},
+            "firebase_enabled":FIREBASE_ENABLED,"firestore_sync_enabled":FIRESTORE_SYNC_ENABLED,
+            "firebase_error":FIREBASE_LAST_ERROR or ""}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/google-play-subscriptions/refresh")
+def admin_refresh_google_play_subscriptions(authorization: str | None = Header(default=None)):
+    check_admin_token(authorization)
+    session = _google_play_session()
+    conn = get_db()
+    updated, errors = 0, []
+    try:
+        _ensure_google_play_table(conn)
+        rows = conn.execute("SELECT * FROM google_play_subscriptions ORDER BY id DESC").fetchall()
+        for row in rows:
+            try:
+                purchase = _google_play_get_subscription(session, row["purchase_token"])
+                line = next((x for x in (purchase.get("lineItems") or []) if x.get("productId") == GOOGLE_PLAY_PRODUCT_ID), None)
+                state = str(purchase.get("subscriptionState") or "SUBSCRIPTION_STATE_UNSPECIFIED")
+                expiry = str((line or {}).get("expiryTime") or row["expiry_time"] or "")
+                acknowledged = str(purchase.get("acknowledgementState") or "") == "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED"
+                order_id = str(purchase.get("latestOrderId") or row["order_id"] or "")
+                base_plan = str(((line or {}).get("offerDetails") or {}).get("basePlanId") or row["base_plan_id"] or "")
+                conn.execute("""UPDATE google_play_subscriptions SET subscription_state=?,expiry_time=?,order_id=?,acknowledged=?,base_plan_id=?,updated_at=? WHERE purchase_token=?""",
+                    (state,expiry,order_id,1 if acknowledged else 0,base_plan,datetime.now().strftime("%Y-%m-%d %H:%M:%S"),row["purchase_token"]))
+                updated += 1
+            except Exception as exc:
+                errors.append({"user_id":row["user_id"],"error":str(exc)[:200]})
+        conn.commit()
+        return {"status":"success","updated":updated,"errors":errors,"firebase_sync_enabled":FIRESTORE_SYNC_ENABLED}
+    finally:
+        conn.close()
+
+
+@app.post("/api/google-play/notifications")
+async def google_play_rtdn(request: Request, authorization: str | None = Header(default=None)):
+    """Pub/Sub push receiver authenticated with a configured static Bearer token."""
+    if not GOOGLE_PLAY_PUBSUB_SECRET:
+        raise HTTPException(status_code=503, detail="Google Play Pub/Sub secret is not configured")
+    supplied = authorization[7:].strip() if authorization and authorization.startswith("Bearer ") else ""
+    if not secrets.compare_digest(supplied, GOOGLE_PLAY_PUBSUB_SECRET):
+        raise HTTPException(status_code=401, detail="Invalid Pub/Sub authentication")
+    try:
+        envelope = await request.json()
+        encoded = (envelope.get("message") or {}).get("data") or ""
+        notification = json.loads(base64.b64decode(encoded).decode("utf-8")) if encoded else {}
+        note = notification.get("subscriptionNotification") or {}
+        purchase_token = str(note.get("purchaseToken") or "")
+        if not purchase_token:
+            return {"status":"success","ignored":True}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Invalid Pub/Sub notification payload") from exc
+    conn = get_db()
+    try:
+        _ensure_google_play_table(conn)
+        row = conn.execute("SELECT * FROM google_play_subscriptions WHERE purchase_token=?",(purchase_token,)).fetchone()
+        if not row:
+            return {"status":"success","ignored":True,"reason":"purchase token not linked yet"}
+        purchase = _google_play_get_subscription(_google_play_session(),purchase_token)
+        line = next((x for x in (purchase.get("lineItems") or []) if x.get("productId")==GOOGLE_PLAY_PRODUCT_ID),None)
+        state = str(purchase.get("subscriptionState") or "SUBSCRIPTION_STATE_UNSPECIFIED")
+        expiry = str((line or {}).get("expiryTime") or row["expiry_time"] or "")
+        acknowledged = str(purchase.get("acknowledgementState") or "") == "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED"
+        order_id = str(purchase.get("latestOrderId") or row["order_id"] or "")
+        base_plan = str(((line or {}).get("offerDetails") or {}).get("basePlanId") or row["base_plan_id"] or "")
+        conn.execute("""UPDATE google_play_subscriptions SET subscription_state=?,expiry_time=?,order_id=?,acknowledged=?,base_plan_id=?,updated_at=? WHERE purchase_token=?""",
+            (state,expiry,order_id,1 if acknowledged else 0,base_plan,datetime.now().strftime("%Y-%m-%d %H:%M:%S"),purchase_token))
+        conn.commit()
+        return {"status":"success","updated":True,"subscription_state":state,"expiry_time":expiry}
     finally:
         conn.close()
 
@@ -2701,6 +2803,7 @@ def conn_profile_exists(user_id: str) -> bool:
     exists = bool(conn.execute("SELECT id FROM social_profiles WHERE user_id=?", (user_id,)).fetchone())
     conn.close()
     return exists
+
 
 
 @app.post("/api/social/report")
