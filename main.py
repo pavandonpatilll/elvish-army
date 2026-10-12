@@ -2386,6 +2386,22 @@ def _subscription_is_entitled(state: str, expiry_time: str) -> bool:
     except Exception:
         return False
 
+def _best_user_vip_entitlement(conn, user_id: str):
+    """Choose any currently entitled subscription for this user, not just the newest row."""
+    rows = conn.execute(
+        "SELECT * FROM google_play_subscriptions WHERE user_id=? AND product_id=? ORDER BY id DESC",
+        (user_id, GOOGLE_PLAY_PRODUCT_ID),
+    ).fetchall()
+    active_rows = [
+        row for row in rows
+        if _subscription_is_entitled(row["subscription_state"], row["expiry_time"])
+    ]
+    if active_rows:
+        # If a user has more than one token, preserve VIP while any verified entitlement remains.
+        return max(active_rows, key=lambda row: row["expiry_time"])
+    return rows[0] if rows else None
+
+
 def _verify_and_store_google_play_purchase(user_id: str, token: str):
     user_id = (user_id or "").strip()[:100]
     token = (token or "").strip()
@@ -2411,13 +2427,16 @@ def _verify_and_store_google_play_purchase(user_id: str, token: str):
         if owner and owner["user_id"] != user_id:
             raise HTTPException(status_code=409, detail="This purchase is already linked to another app account")
 
+        auto_plan = item.get("offerDetails") or {}
+        base_plan_id = str(auto_plan.get("basePlanId") or GOOGLE_PLAY_BASE_PLAN_ID)
+        if base_plan_id != GOOGLE_PLAY_BASE_PLAN_ID:
+            raise HTTPException(status_code=400, detail="Purchase does not match the configured VIP monthly plan")
+
         acknowledged = str(purchase.get("acknowledgementState") or "") == "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED"
         if not acknowledged:
             _google_play_acknowledge(session, token)
             acknowledged = True
 
-        auto_plan = item.get("offerDetails") or {}
-        base_plan_id = str(auto_plan.get("basePlanId") or GOOGLE_PLAY_BASE_PLAN_ID)
         order_id = str(purchase.get("latestOrderId") or "")
         conn.execute("""INSERT INTO google_play_subscriptions
             (user_id, purchase_token, product_id, base_plan_id, subscription_state, expiry_time, order_id, acknowledged, updated_at)
@@ -2440,18 +2459,24 @@ def verify_google_play_purchase(data: GooglePlayVerifyRequest):
 
 @app.get("/api/google-play/status/{user_id}")
 def google_play_vip_status(user_id: str):
-    """Return the stored VIP entitlement; expiry is checked on every request."""
+    """Return VIP if any verified subscription token for this user is still entitled."""
     user_id = (user_id or "").strip()[:100]
     if not user_id:
         raise HTTPException(status_code=400, detail="User ID is required")
     conn = get_db()
     try:
         _ensure_google_play_table(conn)
-        row = conn.execute("SELECT * FROM google_play_subscriptions WHERE user_id=? ORDER BY id DESC LIMIT 1", (user_id,)).fetchone()
+        row = _best_user_vip_entitlement(conn, user_id)
         if not row:
             return {"status": "success", "vip": False, "subscription_state": "NONE", "expiry_time": None}
         active = _subscription_is_entitled(row["subscription_state"], row["expiry_time"])
-        return {"status": "success", "vip": active, "subscription_state": row["subscription_state"], "expiry_time": row["expiry_time"], "acknowledged": bool(row["acknowledged"])}
+        return {
+            "status": "success",
+            "vip": active,
+            "subscription_state": row["subscription_state"],
+            "expiry_time": row["expiry_time"],
+            "acknowledged": bool(row["acknowledged"]),
+        }
     finally:
         conn.close()
 
@@ -2566,10 +2591,7 @@ def get_vip_content(user_id: str):
     conn = get_db()
     try:
         _ensure_google_play_table(conn)
-        row = conn.execute(
-            "SELECT * FROM google_play_subscriptions WHERE user_id=? ORDER BY id DESC LIMIT 1",
-            (user_id,),
-        ).fetchone()
+        row = _best_user_vip_entitlement(conn, user_id)
         if not row or not _subscription_is_entitled(row["subscription_state"], row["expiry_time"]):
             raise HTTPException(status_code=403, detail="Active VIP Legend subscription required")
         return {
